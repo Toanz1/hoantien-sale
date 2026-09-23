@@ -649,13 +649,13 @@ function getOrderStatus(
 function getCashbackRate(): number {
   const value = Number(
     process.env.SHOPEE_CASHBACK_RATE ??
-      "0.7"
+      "0.6"
   );
 
   if (
     !Number.isFinite(value)
   ) {
-    return 0.7;
+    return 0.6;
   }
 
   return Math.max(

@@ -163,8 +163,8 @@ function getOrderStatus(rows: LazadaRow[]) {
 }
 
 function getCashbackRate() {
-  const value = Number(process.env.LAZADA_CASHBACK_RATE ?? "0.7");
-  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.7;
+  const value = Number(process.env.LAZADA_CASHBACK_RATE ?? "0.6");
+  return Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0.6;
 }
 
 function getExternalOrderId(row: LazadaRow) {
