@@ -21,8 +21,13 @@ function createTrackingId(
   url: string
 ) {
   const secret =
-    process.env.TRACKING_SECRET ||
-    "dev-secret";
+  process.env.TRACKING_SECRET;
+
+if (!secret) {
+  throw new Error(
+    "TRACKING_SECRET chưa được cấu hình."
+  );
+}
 
   return crypto
     .createHmac("sha256", secret)
