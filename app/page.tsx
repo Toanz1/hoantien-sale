@@ -2,7 +2,7 @@ import Link from "next/link";
 
 import LinkForm from "@/components/LinkForm";
 import HomeAuthNav from "@/components/HomeAuthNav";
-
+import FeaturedProducts from "@/components/FeaturedProducts";
 const platforms = [
   {
     name: "Shopee",
@@ -178,7 +178,8 @@ export default function Home() {
           </div>
         </div>
       </section>
-
+            {/* FEATURED PRODUCTS */}
+<FeaturedProducts />
       {/* QUICK ACCESS */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="mb-6">
