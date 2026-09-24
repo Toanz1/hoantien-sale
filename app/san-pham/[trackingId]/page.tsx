@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
+import BrandLogo from "@/components/BrandLogo";
 import LinkForm from "@/components/LinkForm";
 import MobileNav from "@/components/MobileNav";
 import { createClient } from "@/lib/supabase/client";
@@ -58,7 +58,23 @@ function getPlatformName(platform: string) {
       return platform || "Sàn thương mại điện tử";
   }
 }
+function getPlatformLogo(platform: string) {
+  switch (platform?.toLowerCase()) {
+    case "shopee":
+      return "/platforms/shopee.png";
 
+    case "lazada":
+      return "/platforms/lazada.png";
+
+    case "tiktok":
+    case "tiktokshop":
+    case "tiktok_shop":
+      return "/platforms/tiktok-shop.png";
+
+    default:
+      return null;
+  }
+}
 function getPlatformStyle(platform: string) {
   switch (platform?.toLowerCase()) {
     case "shopee":
@@ -447,13 +463,16 @@ const trackingId: string =
   ======================================================= */
 
   const platformStyle =
-    link
-      ? getPlatformStyle(
-          link.platform
-        )
-      : null;
+  link
+    ? getPlatformStyle(link.platform)
+    : null;
 
-  const cashbackAmount =
+const platformLogo =
+  link
+    ? getPlatformLogo(link.platform)
+    : null;
+
+const cashbackAmount =
     product
       ? calculateCashback(
           product.price,
@@ -476,24 +495,7 @@ const trackingId: string =
 
       <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur-xl">
         <div className="mx-auto flex h-[68px] max-w-7xl items-center justify-between px-4 sm:px-6">
-          <Link
-            href="/"
-            className="flex items-center gap-3"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 font-black text-white shadow-sm shadow-emerald-200">
-              H
-            </div>
-
-            <div>
-              <div className="text-sm font-black sm:text-base">
-                Hoàn Tiền Sale
-              </div>
-
-              <div className="hidden text-[10px] font-bold uppercase tracking-[0.15em] text-gray-400 sm:block">
-                Mua sắm · Nhận tiền
-              </div>
-            </div>
-          </Link>
+          <BrandLogo />
 
           <Link
             href="/"
@@ -595,71 +597,78 @@ const trackingId: string =
           <>
             <div className="grid gap-5 lg:grid-cols-[0.92fr_1.08fr]">
               {/* =========================================
-                  PRODUCT IMAGE
-              ========================================= */}
+    PRODUCT IMAGE
+========================================= */}
 
-              <section className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm">
-                <div
-                  className={`relative flex aspect-square items-center justify-center bg-gradient-to-br ${
-                    platformStyle?.imageBg ||
-                    "from-gray-50 via-white to-gray-50"
-                  }`}
-                >
-                  <div className="absolute left-4 top-4 z-10">
-                    <span
-                      className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-black shadow-sm ${
-                        platformStyle?.badge ||
-                        "border-gray-200 bg-white text-gray-700"
-                      }`}
-                    >
-                      {getPlatformName(
-                        link.platform
-                      )}
-                    </span>
-                  </div>
+<section className="overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm">
+  <div
+    className={`relative flex aspect-square items-center justify-center bg-gradient-to-br ${
+      platformStyle?.imageBg ||
+      "from-gray-50 via-white to-gray-50"
+    }`}
+  >
+    {/* PLATFORM BADGE */}
+    <div className="absolute left-4 top-4 z-10">
+      <span
+        className={`inline-flex items-center rounded-full border px-3 py-1.5 text-xs font-black shadow-sm ${
+          platformStyle?.badge ||
+          "border-gray-200 bg-white text-gray-700"
+        }`}
+      >
+        {getPlatformName(link.platform)}
+      </span>
+    </div>
 
-                  {product?.image_url &&
-                  !imageFailed ? (
-                    <img
-                      src={
-                        product.image_url
-                      }
-                      alt={product.name}
-                      onError={() =>
-                        setImageFailed(
-                          true
-                        )
-                      }
-                      className="h-full w-full object-contain p-5 sm:p-8"
-                    />
-                  ) : (
-                    <div className="p-8 text-center">
-                      {platformStyle && (
-                        <div
-                          className={`mx-auto flex h-24 w-24 items-center justify-center rounded-[28px] border text-4xl font-black shadow-sm ${platformStyle.badge}`}
-                        >
-                          {
-                            platformStyle.icon
-                          }
-                        </div>
-                      )}
+    {/* PRODUCT IMAGE */}
+    {product?.image_url && !imageFailed ? (
+      <img
+        src={product.image_url}
+        alt={product.name}
+        onError={() => setImageFailed(true)}
+        className="h-full w-full object-contain p-5 sm:p-8"
+      />
+    ) : (
+      <div className="p-8 text-center">
+        {/* PLATFORM LOGO */}
+        {platformStyle && (
+          <div
+            className={`mx-auto flex h-24 w-24 items-center justify-center overflow-hidden rounded-[28px] border bg-white p-3 shadow-sm ${platformStyle.badge}`}
+          >
+            {platformLogo ? (
+              <img
+                src={platformLogo}
+                alt={`${getPlatformName(
+                  link.platform
+                )} logo`}
+                className="h-full w-full object-contain"
+              />
+            ) : (
+              <span className="text-4xl font-black">
+                {platformStyle.icon}
+              </span>
+            )}
+          </div>
+        )}
 
-                      <div className="mt-5 text-xl font-black">
-                        {getPlatformName(
-                          link.platform
-                        )}
-                      </div>
+        {/* PLATFORM NAME */}
+        <div className="mt-5 text-xl font-black">
+          {getPlatformName(link.platform)}
+        </div>
 
-                      <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-gray-500">
-                        {product
-                          ? "Không thể tải ảnh sản phẩm."
-                          : "Link mua hàng đã được tạo riêng cho tài khoản của bạn."}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </section>
+        {/* DESCRIPTION */}
+        <p className="mx-auto mt-2 max-w-xs text-sm leading-6 text-gray-500">
+          {product
+            ? "Không thể tải ảnh sản phẩm."
+            : "Link mua hàng đã được tạo riêng cho tài khoản của bạn."}
+        </p>
+      </div>
+    )}
+  </div>
+</section>
 
+{/* =========================================
+    PRODUCT INFORMATION
+========================================= */}
               {/* =========================================
                   PRODUCT INFORMATION
               ========================================= */}

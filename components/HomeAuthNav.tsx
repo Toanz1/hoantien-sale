@@ -5,87 +5,52 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 
 export default function HomeAuthNav() {
-  const [email, setEmail] =
-    useState<string | null>(null);
-
-  const [fullName, setFullName] =
-    useState<string | null>(null);
-
-  const [isAdmin, setIsAdmin] =
-    useState(false);
-
-  const [loading, setLoading] =
-    useState(true);
+  const [email, setEmail] = useState<string | null>(null);
+  const [fullName, setFullName] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const supabase = createClient();
     let mounted = true;
 
-    async function checkAdmin(
-      accessToken?: string | null
-    ) {
+    async function checkAdmin(accessToken?: string | null) {
       if (!accessToken) {
-        if (mounted) {
-          setIsAdmin(false);
-        }
-
+        if (mounted) setIsAdmin(false);
         return;
       }
 
       try {
-        const response = await fetch(
-          "/api/admin/me",
-          {
-            method: "GET",
-            headers: {
-              Authorization:
-                `Bearer ${accessToken}`,
-            },
-            cache: "no-store",
-          }
-        );
+        const response = await fetch("/api/admin/me", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
+          cache: "no-store",
+        });
 
-        if (!mounted) {
-          return;
-        }
-
+        if (!mounted) return;
         setIsAdmin(response.ok);
       } catch (error) {
-        console.error(
-          "Không thể kiểm tra quyền quản trị:",
-          error
-        );
-
-        if (mounted) {
-          setIsAdmin(false);
-        }
+        console.error("Không thể kiểm tra quyền quản trị:", error);
+        if (mounted) setIsAdmin(false);
       }
     }
 
-    async function loadProfile(
-      userId: string
-    ) {
-      const { data: profile, error } =
-        await supabase
-          .from("profiles")
-          .select("full_name")
-          .eq("id", userId)
-          .maybeSingle();
+    async function loadProfile(userId: string) {
+      const { data: profile, error } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", userId)
+        .maybeSingle();
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       if (error) {
-        console.error(
-          "Không thể tải thông tin người dùng:",
-          error
-        );
+        console.error("Không thể tải thông tin người dùng:", error);
       }
 
-      setFullName(
-        profile?.full_name?.trim() || null
-      );
+      setFullName(profile?.full_name?.trim() || null);
     }
 
     async function loadUser() {
@@ -97,9 +62,7 @@ export default function HomeAuthNav() {
           error: userError,
         } = await supabase.auth.getUser();
 
-        if (!mounted) {
-          return;
-        }
+        if (!mounted) return;
 
         if (userError || !user) {
           setEmail(null);
@@ -116,15 +79,10 @@ export default function HomeAuthNav() {
 
         await Promise.all([
           loadProfile(user.id),
-          checkAdmin(
-            session?.access_token ?? null
-          ),
+          checkAdmin(session?.access_token ?? null),
         ]);
       } catch (error) {
-        console.error(
-          "Không thể tải tài khoản:",
-          error
-        );
+        console.error("Không thể tải tài khoản:", error);
 
         if (mounted) {
           setEmail(null);
@@ -132,9 +90,7 @@ export default function HomeAuthNav() {
           setIsAdmin(false);
         }
       } finally {
-        if (mounted) {
-          setLoading(false);
-        }
+        if (mounted) setLoading(false);
       }
     }
 
@@ -142,39 +98,30 @@ export default function HomeAuthNav() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (!mounted) {
-          return;
-        }
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (!mounted) return;
 
-        const user = session?.user;
+      const user = session?.user;
 
-        if (!user) {
-          setEmail(null);
-          setFullName(null);
-          setIsAdmin(false);
-          setLoading(false);
-
-          return;
-        }
-
-        setEmail(user.email ?? null);
-
-        try {
-          await Promise.all([
-            loadProfile(user.id),
-            checkAdmin(
-              session.access_token
-            ),
-          ]);
-        } finally {
-          if (mounted) {
-            setLoading(false);
-          }
-        }
+      if (!user) {
+        setEmail(null);
+        setFullName(null);
+        setIsAdmin(false);
+        setLoading(false);
+        return;
       }
-    );
+
+      setEmail(user.email ?? null);
+
+      try {
+        await Promise.all([
+          loadProfile(user.id),
+          checkAdmin(session.access_token),
+        ]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    });
 
     return () => {
       mounted = false;
@@ -184,9 +131,9 @@ export default function HomeAuthNav() {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
+        <div className="hidden h-10 w-28 animate-pulse rounded-xl bg-gray-100 md:block" />
         <div className="h-10 w-10 animate-pulse rounded-xl bg-gray-100" />
-
         <div className="hidden h-10 w-28 animate-pulse rounded-xl bg-gray-100 sm:block" />
       </div>
     );
@@ -212,14 +159,8 @@ export default function HomeAuthNav() {
     );
   }
 
-  const displayName =
-    fullName ||
-    email.split("@")[0] ||
-    "Tài khoản";
-
-  const avatarLetter =
-    displayName.charAt(0).toUpperCase() ||
-    "U";
+  const displayName = fullName || email.split("@")[0] || "Tài khoản";
+  const avatarLetter = displayName.charAt(0).toUpperCase() || "U";
 
   return (
     <div className="flex items-center gap-2">
@@ -241,17 +182,42 @@ export default function HomeAuthNav() {
               strokeLinecap="round"
               strokeLinejoin="round"
             />
-
             <path
               d="m9.5 12 1.7 1.7 3.6-3.7"
               strokeLinecap="round"
               strokeLinejoin="round"
             />
           </svg>
-
           Quản trị
         </Link>
       )}
+
+      {/* INVITE FRIENDS - nằm ngay cạnh chuông */}
+      <Link
+        href="/referral"
+        className="hidden h-10 items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 text-xs font-black text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 sm:inline-flex"
+      >
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.9"
+          className="h-4 w-4"
+        >
+          <path
+            d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <circle cx="9" cy="7" r="4" />
+          <path
+            d="M19 8v6M22 11h-6"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        Mời bạn bè
+      </Link>
 
       {/* NOTIFICATION */}
       <Link
@@ -271,11 +237,7 @@ export default function HomeAuthNav() {
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-
-          <path
-            d="M10 21h4"
-            strokeLinecap="round"
-          />
+          <path d="M10 21h4" strokeLinecap="round" />
         </svg>
       </Link>
 
@@ -305,9 +267,7 @@ export default function HomeAuthNav() {
           </div>
 
           <div className="mt-0.5 text-[10px] font-semibold text-gray-400">
-            {isAdmin
-              ? "Quản trị viên"
-              : "Tài khoản của tôi"}
+            {isAdmin ? "Quản trị viên" : "Tài khoản của tôi"}
           </div>
         </div>
 

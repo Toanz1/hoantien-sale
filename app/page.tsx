@@ -3,6 +3,7 @@ import Link from "next/link";
 import LinkForm from "@/components/LinkForm";
 import HomeAuthNav from "@/components/HomeAuthNav";
 import FeaturedProducts from "@/components/FeaturedProducts";
+import BrandLogo from "@/components/BrandLogo";
 const platforms = [
   {
     name: "Shopee",
@@ -63,24 +64,7 @@ export default function Home() {
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-xl">
         <div className="mx-auto grid h-[72px] max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
-          <Link
-            href="/"
-            className="flex min-w-0 items-center gap-3"
-          >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-lg font-black text-white shadow-sm shadow-emerald-200">
-              H
-            </div>
-
-            <div className="min-w-0">
-              <div className="truncate text-base font-black tracking-tight text-gray-900 sm:text-lg">
-                Hoàn Tiền Sale
-              </div>
-
-              <div className="hidden text-[10px] font-bold uppercase tracking-[0.18em] text-gray-400 sm:block">
-                Mua sắm · Nhận tiền
-              </div>
-            </div>
-          </Link>
+          <BrandLogo />
 
           <div className="hidden whitespace-nowrap text-sm font-bold text-gray-700 md:block">
             Mua sắm hoàn tiền
@@ -186,7 +170,7 @@ export default function Home() {
 </section>
 
 {/* FEATURED PRODUCTS */}
-<FeaturedProducts />
+
       <FeaturedProducts />
       {/* QUICK ACCESS */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
@@ -200,7 +184,7 @@ export default function Home() {
           </h2>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
             href="/orders"
             className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
@@ -246,6 +230,30 @@ export default function Home() {
             <p className="mt-2 text-sm leading-6 text-gray-500">
               Theo dõi số dư, tiền hoàn và yêu cầu rút tiền
               về tài khoản ngân hàng.
+            </p>
+          </Link>
+
+          <Link
+            href="/referral"
+            className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+          >
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-xl">
+              🎁
+            </div>
+
+            <div className="mt-5 flex items-center justify-between">
+              <h3 className="text-lg font-black">
+                Mời bạn bè
+              </h3>
+
+              <span className="text-gray-300 transition group-hover:translate-x-1 group-hover:text-gray-900">
+                →
+              </span>
+            </div>
+
+            <p className="mt-2 text-sm leading-6 text-gray-500">
+              Chia sẻ mã giới thiệu, mời bạn bè tham gia và theo
+              dõi hoa hồng giới thiệu của bạn.
             </p>
           </Link>
 

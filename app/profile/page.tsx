@@ -458,6 +458,16 @@ export default function ProfilePage() {
     user?.email ||
     "Thành viên";
 
+  const memberCode = user?.id
+    ? `HT${user.id.replace(/-/g, "").slice(0, 8).toUpperCase()}`
+    : "—";
+
+  const joinedDate = formatDate(
+    profile?.created_at ||
+      user?.createdAt ||
+      null
+  );
+
   function clearMessages() {
     setError("");
     setSuccess("");
@@ -898,6 +908,29 @@ export default function ProfilePage() {
                   </div>
                 </div>
               </div>
+              <div className="mt-4 border-t border-gray-100 pt-4">
+  <div className="space-y-3">
+    <div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        Mã thành viên
+      </div>
+
+      <div className="mt-1 font-black text-gray-900">
+        {memberCode}
+      </div>
+    </div>
+
+    <div>
+      <div className="text-[10px] font-bold uppercase tracking-wider text-gray-400">
+        Ngày tham gia
+      </div>
+
+      <div className="mt-1 font-bold text-gray-900">
+        {joinedDate}
+      </div>
+    </div>
+  </div>
+</div>
 
               <div className="mt-5 rounded-2xl bg-emerald-50 p-4">
                 <div className="text-xs font-bold text-emerald-700">
@@ -1160,142 +1193,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* ACCOUNT INFORMATION */}
-            <div className="mt-5 rounded-[28px] border border-gray-200 bg-white shadow-sm">
-              <div className="border-b border-gray-100 p-6 sm:px-7">
-                <h2 className="text-lg font-black">
-                  Thông tin tài khoản
-                </h2>
-
-                <p className="mt-1 text-sm text-gray-500">
-                  Thông tin hệ thống của tài khoản.
-                </p>
-              </div>
-
-              <div className="divide-y divide-gray-100 px-6 sm:px-7">
-                <InfoRow
-                  label="Mã thành viên"
-                  value={
-                    profile?.referral_code ||
-                    "Đang cập nhật"
-                  }
-                  mono
-                />
-
-                <InfoRow
-                  label="Ngày tham gia"
-                  value={formatDate(
-                    profile?.created_at ||
-                      user?.createdAt ||
-                      null
-                  )}
-                />
-              </div>
-            </div>
-
-            {/* REFERRAL */}
-            <div className="mt-5 overflow-hidden rounded-[28px] border border-emerald-100 bg-white shadow-sm">
-              <div className="border-b border-emerald-100 bg-emerald-50/60 p-6 sm:px-7">
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-500 text-xl text-white">
-                    🎁
-                  </div>
-
-                  <div>
-                    <h2 className="text-lg font-black text-gray-950">
-                      Mời bạn bè
-                    </h2>
-
-                    <p className="mt-1 text-sm leading-6 text-gray-600">
-                      Chia sẻ mã hoặc link giới thiệu.
-                      Khi người được bạn mời phát sinh
-                      đơn đủ điều kiện, hoa hồng giới
-                      thiệu sẽ được ghi nhận vào ví.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-6 sm:p-7">
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <ReferralValue
-                    label="Mã giới thiệu"
-                    value={
-                      profile?.referral_code ||
-                      "Chưa có mã"
-                    }
-                    onCopy={
-                      profile?.referral_code
-                        ? () =>
-                            copyReferral(
-                              profile.referral_code!,
-                              "Mã giới thiệu"
-                            )
-                        : undefined
-                    }
-                  />
-
-                  <ReferralValue
-                    label="Link giới thiệu"
-                    value={
-                      referralLink ||
-                      "Chưa có link"
-                    }
-                    onCopy={
-                      referralLink
-                        ? () =>
-                            copyReferral(
-                              referralLink,
-                              "Link giới thiệu"
-                            )
-                        : undefined
-                    }
-                  />
-                </div>
-
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
-                    <div className="text-xs font-bold text-gray-500">
-                      Người đã giới thiệu
-                    </div>
-
-                    <div className="mt-2 text-2xl font-black text-gray-950">
-                      {invitedCount}
-                    </div>
-
-                    <div className="mt-1 text-xs text-gray-400">
-                      tài khoản
-                    </div>
-                  </div>
-
-                  <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-5">
-                    <div className="text-xs font-bold text-emerald-700">
-                      Hoa hồng giới thiệu
-                    </div>
-
-                    <div className="mt-2 text-2xl font-black text-emerald-700">
-                      {formatMoney(
-                        referralCommission
-                      )}
-                    </div>
-
-                    <div className="mt-1 text-xs text-emerald-600">
-                      Hoa hồng ròng đã ghi nhận
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-4 rounded-2xl border border-amber-100 bg-amber-50 p-4 text-xs font-medium leading-5 text-amber-800">
-                  Hoa hồng chỉ được tính khi đơn
-                  hàng của người được mời đạt trạng
-                  thái đủ điều kiện. Nếu đơn bị từ
-                  chối sau khi đã ghi nhận, hệ thống
-                  có thể tạo giao dịch hoàn tác tương
-                  ứng.
-                </div>
-              </div>
-            </div>
-
             {/* BANK INFORMATION */}
             <div className="mt-5 overflow-hidden rounded-[28px] border border-gray-200 bg-white shadow-sm">
               <div className="flex flex-col gap-4 border-b border-gray-100 p-6 sm:flex-row sm:items-center sm:justify-between sm:px-7">
@@ -1534,31 +1431,6 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* QUICK LINKS */}
-            <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              <QuickLink
-                href="/orders"
-                icon="📦"
-                title="Đơn hàng của tôi"
-                description="Theo dõi trạng thái và tiền hoàn của các đơn hàng."
-              />
-
-              <QuickLink
-                href="/wallet"
-                icon="💰"
-                title="Ví & rút tiền"
-                description="Kiểm tra số dư, lịch sử giao dịch và yêu cầu rút tiền."
-              />
-
-              {isAdmin && (
-                <QuickLink
-                  href="/admin"
-                  icon="🛡️"
-                  title="Quản trị hệ thống"
-                  description="Quản lý người dùng, đơn hàng, đối soát và yêu cầu rút tiền."
-                />
-              )}
-            </div>
           </section>
         </div>
       </div>
@@ -1576,8 +1448,12 @@ function Header() {
           href="/"
           className="flex items-center gap-3"
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-emerald-500 font-black text-white shadow-sm shadow-emerald-200">
-            H
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center">
+            <img
+              src="/platforms/hoantiensale.png"
+              alt="Hoàn Tiền Sale"
+              className="h-full w-full object-contain"
+            />
           </div>
 
           <div>
@@ -1597,35 +1473,14 @@ function Header() {
             className="rounded-xl px-4 py-2 text-sm font-bold text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
           >
             Trang chủ
-          </Link>
-
-          <Link
-            href="/orders"
-            className="rounded-xl px-4 py-2 text-sm font-bold text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
-          >
-            Đơn hàng
-          </Link>
-
-          <Link
-            href="/wallet"
-            className="rounded-xl px-4 py-2 text-sm font-bold text-gray-500 transition hover:bg-gray-50 hover:text-gray-900"
-          >
-            Ví tiền
-          </Link>
-
-          <Link
-            href="/profile"
-            className="rounded-xl bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-700"
-          >
-            Tài khoản
-          </Link>
+          </Link>       
         </nav>
 
         <Link
           href="/"
-          className="rounded-xl bg-gray-950 px-4 py-2.5 text-xs font-black text-white transition hover:bg-gray-800 md:hidden"
+          className="rounded-xl px-4 py-2.5 text-xs font-black text-gray-600 transition hover:bg-gray-50 hover:text-gray-950 md:hidden"
         >
-          + Tạo link
+          Trang chủ
         </Link>
       </div>
     </header>
@@ -1855,42 +1710,5 @@ function StatCard({
         </div>
       )}
     </div>
-  );
-}
-
-function QuickLink({
-  href,
-  icon,
-  title,
-  description,
-}: {
-  href: string;
-  icon: string;
-  title: string;
-  description: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="group rounded-3xl border border-gray-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-    >
-      <div className="flex items-center justify-between">
-        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-emerald-50">
-          {icon}
-        </div>
-
-        <span className="text-gray-300 transition group-hover:translate-x-1 group-hover:text-gray-900">
-          →
-        </span>
-      </div>
-
-      <div className="mt-5 font-black">
-        {title}
-      </div>
-
-      <p className="mt-2 text-sm leading-6 text-gray-500">
-        {description}
-      </p>
-    </Link>
   );
 }

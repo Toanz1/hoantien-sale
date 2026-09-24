@@ -836,35 +836,13 @@ export default function WalletPage() {
             </div>
           </Link>
 
-          <nav className="hidden items-center gap-1 md:flex">
-            <Link
-              href="/"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100"
-            >
-              Dashboard
-            </Link>
-
-            <Link
-              href="/orders"
-              className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-600 transition hover:bg-gray-100"
-            >
-              Đơn hàng
-            </Link>
-
-            <Link
-              href="/wallet"
-              className="rounded-lg bg-emerald-50 px-4 py-2 text-sm font-black text-emerald-600"
-            >
-              Ví tiền
-            </Link>
-          </nav>
-
           <Link
-            href="/"
-            className="hidden rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-bold text-gray-700 shadow-sm transition hover:bg-gray-50 md:inline-flex"
-          >
-            Dashboard
-          </Link>
+      href="/profile"
+      className="inline-flex items-center justify-center rounded-xl border border-gray-200 bg-white px-4 py-2.5 text-sm font-black text-gray-700 shadow-sm transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+    >
+      ← Về trang cá nhân
+    </Link>
+      
 
           {/* Mobile header action */}
           <Link
