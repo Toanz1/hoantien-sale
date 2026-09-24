@@ -7,12 +7,30 @@ import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
+/* =========================================================
+   TYPES
+========================================================= */
+
+type SnapshotProduct = {
+  id: string;
+  name: string;
+  platform: string;
+  product_url: string;
+  image_url: string | null;
+  price: number | null;
+  original_price: number | null;
+  cashback_percent: number | null;
+};
+
+/* =========================================================
+   ACCESS TOKEN
+========================================================= */
+
 function getAccessToken(
   request: NextRequest
 ) {
   const authorization =
-    request.headers.get("authorization") ??
-    "";
+    request.headers.get("authorization") ?? "";
 
   if (
     !authorization
@@ -24,6 +42,10 @@ function getAccessToken(
 
   return authorization.slice(7).trim();
 }
+
+/* =========================================================
+   USER SUPABASE CLIENT
+========================================================= */
 
 function getUserClient(
   accessToken: string
@@ -59,6 +81,10 @@ function getUserClient(
   );
 }
 
+/* =========================================================
+   SERVER SUPABASE CLIENT
+========================================================= */
+
 function getServerClient() {
   const supabaseUrl =
     process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -87,6 +113,10 @@ function getServerClient() {
   );
 }
 
+/* =========================================================
+   GET
+========================================================= */
+
 export async function GET(
   request: NextRequest,
   context: {
@@ -96,9 +126,9 @@ export async function GET(
   }
 ) {
   try {
-    // =========================
-    // TRACKING ID
-    // =========================
+    // =====================================================
+    // 1. TRACKING ID
+    // =====================================================
 
     const { trackingId } =
       await context.params;
@@ -117,9 +147,9 @@ export async function GET(
       );
     }
 
-    // =========================
-    // AUTH
-    // =========================
+    // =====================================================
+    // 2. AUTH
+    // =====================================================
 
     const accessToken =
       getAccessToken(request);
@@ -148,6 +178,11 @@ export async function GET(
       userError ||
       !user
     ) {
+      console.error(
+        "GET /api/links/[trackingId] auth error:",
+        userError
+      );
+
       return NextResponse.json(
         {
           success: false,
@@ -158,22 +193,26 @@ export async function GET(
       );
     }
 
-    // =========================
-    // LOAD AFFILIATE LINK
-    // =========================
+    // =====================================================
+    // 3. SERVER CLIENT
+    // =====================================================
 
     const serverClient =
       getServerClient();
 
+    // =====================================================
+    // 4. LOAD AFFILIATE LINK
+    // =====================================================
+
     /*
-     * Service role được dùng để đọc,
-     * nhưng luôn bắt buộc cả:
+     * Service role bypass RLS.
      *
-     * tracking_id = trackingId
-     * user_id = user.id
+     * Vì vậy luôn bắt buộc:
      *
-     * nên user không thể đọc tracking
-     * của tài khoản khác.
+     * tracking_id = cleanTrackingId
+     * user_id     = user.id
+     *
+     * Không được bỏ điều kiện user_id.
      */
 
     const {
@@ -189,13 +228,21 @@ export async function GET(
         original_url,
         affiliate_url,
         featured_product_id,
+        product_name,
+        product_image_url,
+        product_price,
+        product_original_price,
+        cashback_percent,
         created_at
       `)
       .eq(
         "tracking_id",
         cleanTrackingId
       )
-      .eq("user_id", user.id)
+      .eq(
+        "user_id",
+        user.id
+      )
       .maybeSingle();
 
     if (linkError) {
@@ -225,11 +272,23 @@ export async function GET(
       );
     }
 
-    // =========================
-    // FEATURED PRODUCT
-    // =========================
+    // =====================================================
+    // 5. PRODUCT
+    // =====================================================
 
-    let product = null;
+    let product:
+      | SnapshotProduct
+      | null = null;
+
+    // =====================================================
+    // 5A. FEATURED PRODUCT
+    // =====================================================
+
+    /*
+     * Nếu link được tạo từ sản phẩm Admin:
+     *
+     * featured_products là nguồn chính.
+     */
 
     if (
       link.featured_product_id
@@ -257,23 +316,153 @@ export async function GET(
 
       if (productError) {
         /*
-         * Không làm hỏng affiliate
-         * link chỉ vì metadata sản phẩm
-         * không tải được.
+         * Metadata lỗi không được làm
+         * hỏng affiliate link.
          */
         console.error(
           "Load featured product error:",
           productError
         );
-      } else {
-        product =
-          productData ?? null;
+      } else if (productData) {
+        product = {
+          id:
+            productData.id,
+
+          name:
+            productData.name,
+
+          platform:
+            productData.platform,
+
+          product_url:
+            productData.product_url,
+
+          image_url:
+            productData.image_url ?? null,
+
+          price:
+            productData.price == null
+              ? null
+              : Number(
+                  productData.price
+                ),
+
+          original_price:
+            productData.original_price ==
+            null
+              ? null
+              : Number(
+                  productData.original_price
+                ),
+
+          cashback_percent:
+            productData.cashback_percent ==
+            null
+              ? null
+              : Number(
+                  productData.cashback_percent
+                ),
+        };
       }
     }
 
+    // =====================================================
+    // 5B. SNAPSHOT PRODUCT
+    // =====================================================
+
+    /*
+     * Nếu user tự dán link:
+     *
+     * featured_product_id = null
+     *
+     * Metadata sẽ lấy từ snapshot
+     * đã lưu trong affiliate_links.
+     */
+
+    if (
+      !product &&
+      link.product_name
+    ) {
+      product = {
+        /*
+         * Không phải ID của featured_products.
+         *
+         * Dùng affiliate link ID để React
+         * vẫn có một ID ổn định.
+         */
+        id:
+          link.id,
+
+        name:
+          link.product_name,
+
+        platform:
+          link.platform,
+
+        product_url:
+          link.original_url,
+
+        image_url:
+          link.product_image_url ??
+          null,
+
+        price:
+          link.product_price == null
+            ? null
+            : Number(
+                link.product_price
+              ),
+
+        original_price:
+          link.product_original_price ==
+          null
+            ? null
+            : Number(
+                link.product_original_price
+              ),
+
+        cashback_percent:
+          link.cashback_percent == null
+            ? null
+            : Number(
+                link.cashback_percent
+              ),
+      };
+    }
+
+    // =====================================================
+    // 6. RESULT
+    // =====================================================
+
     return NextResponse.json({
       success: true,
-      link,
+
+      link: {
+        id:
+          link.id,
+
+        user_id:
+          link.user_id,
+
+        platform:
+          link.platform,
+
+        tracking_id:
+          link.tracking_id,
+
+        original_url:
+          link.original_url,
+
+        affiliate_url:
+          link.affiliate_url,
+
+        featured_product_id:
+          link.featured_product_id,
+
+        created_at:
+          link.created_at,
+      },
+
       product,
     });
   } catch (error) {

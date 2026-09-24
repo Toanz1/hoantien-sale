@@ -22,6 +22,13 @@ type FeaturedProduct = {
   is_active: boolean;
 };
 
+type ProductMetadata = {
+  name: string | null;
+  imageUrl: string | null;
+  price: number | null;
+  originalPrice: number | null;
+};
+
 /* =========================================================
    SUPABASE USER CLIENT
 ========================================================= */
@@ -87,10 +94,451 @@ function getAdminClient() {
 }
 
 /* =========================================================
+   HTML HELPERS
+========================================================= */
+
+function decodeHtml(value: string) {
+  return value
+    .replace(/&amp;/gi, "&")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/&#x27;/gi, "'")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&nbsp;/gi, " ")
+    .trim();
+}
+
+function getMetaContent(
+  html: string,
+  property: string
+): string | null {
+  const escapedProperty =
+    property.replace(
+      /[.*+?^${}()|[\]\\]/g,
+      "\\$&"
+    );
+
+  /*
+   * Hỗ trợ cả:
+   *
+   * <meta property="og:title" content="...">
+   *
+   * và:
+   *
+   * <meta content="..." property="og:title">
+   */
+
+  const patterns = [
+    new RegExp(
+      `<meta[^>]+(?:property|name)=["']${escapedProperty}["'][^>]+content=["']([^"']*)["'][^>]*>`,
+      "i"
+    ),
+
+    new RegExp(
+      `<meta[^>]+content=["']([^"']*)["'][^>]+(?:property|name)=["']${escapedProperty}["'][^>]*>`,
+      "i"
+    ),
+  ];
+
+  for (const pattern of patterns) {
+    const match =
+      html.match(pattern);
+
+    if (match?.[1]) {
+      return decodeHtml(
+        match[1]
+      );
+    }
+  }
+
+  return null;
+}
+
+function getTitleFromHtml(
+  html: string
+): string | null {
+  const match =
+    html.match(
+      /<title[^>]*>([\s\S]*?)<\/title>/i
+    );
+
+  if (!match?.[1]) {
+    return null;
+  }
+
+  return decodeHtml(
+    match[1]
+      .replace(/\s+/g, " ")
+      .trim()
+  );
+}
+
+/* =========================================================
+   MONEY HELPERS
+========================================================= */
+
+function parseMoney(
+  value: string | null
+): number | null {
+  if (!value) {
+    return null;
+  }
+
+  let clean =
+    value
+      .replace(/[₫đ]/gi, "")
+      .replace(/\s+/g, "")
+      .trim();
+
+  if (!clean) {
+    return null;
+  }
+
+  /*
+   * Trường hợp:
+   *
+   * 110.000
+   * 110,000
+   *
+   * với giá VNĐ thường là dấu phân cách
+   * hàng nghìn.
+   */
+  if (
+    /^\d{1,3}([.,]\d{3})+$/.test(
+      clean
+    )
+  ) {
+    clean =
+      clean.replace(/[.,]/g, "");
+  } else {
+    /*
+     * Trường hợp metadata trả số decimal
+     * kiểu 110000.00.
+     */
+    clean =
+      clean.replace(/,/g, "");
+  }
+
+  const number =
+    Number(clean);
+
+  if (
+    !Number.isFinite(number) ||
+    number < 0
+  ) {
+    return null;
+  }
+
+  return number;
+}
+
+/* =========================================================
+   SHOPEE METADATA
+========================================================= */
+
+async function fetchShopeeMetadata(
+  url: string
+): Promise<ProductMetadata> {
+  const empty: ProductMetadata = {
+    name: null,
+    imageUrl: null,
+    price: null,
+    originalPrice: null,
+  };
+
+  try {
+    const controller =
+      new AbortController();
+
+    const timeout =
+      setTimeout(
+        () => controller.abort(),
+        7000
+      );
+
+    let response: Response;
+
+    try {
+      response =
+        await fetch(url, {
+          method: "GET",
+
+          redirect: "follow",
+
+          cache: "no-store",
+
+          signal:
+            controller.signal,
+
+          headers: {
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36",
+
+            Accept:
+              "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+
+            "Accept-Language":
+              "vi-VN,vi;q=0.9,en-US;q=0.8,en;q=0.7",
+          },
+        });
+    } finally {
+      clearTimeout(timeout);
+    }
+
+    if (!response.ok) {
+      console.warn(
+        "Shopee metadata HTTP:",
+        response.status
+      );
+
+      return empty;
+    }
+
+    const contentType =
+      response.headers.get(
+        "content-type"
+      ) ?? "";
+
+    if (
+      !contentType
+        .toLowerCase()
+        .includes("text/html")
+    ) {
+      console.warn(
+        "Shopee metadata is not HTML:",
+        contentType
+      );
+
+      return empty;
+    }
+
+    const html =
+      await response.text();
+
+    if (!html) {
+      return empty;
+    }
+
+    /* -------------------------
+       NAME
+    ------------------------- */
+
+    let name =
+      getMetaContent(
+        html,
+        "og:title"
+      ) ||
+      getMetaContent(
+        html,
+        "twitter:title"
+      ) ||
+      getTitleFromHtml(html);
+
+    if (name) {
+      /*
+       * Shopee đôi khi thêm tên website
+       * vào cuối title.
+       */
+      name =
+        name
+          .replace(
+            /\s*\|\s*Shopee\s+Việt\s+Nam\s*$/i,
+            ""
+          )
+          .replace(
+            /\s*[-–]\s*Shopee\s+Việt\s+Nam\s*$/i,
+            ""
+          )
+          .trim();
+
+      if (!name) {
+        name = null;
+      }
+    }
+
+    /* -------------------------
+       IMAGE
+    ------------------------- */
+
+    const imageUrl =
+      getMetaContent(
+        html,
+        "og:image"
+      ) ||
+      getMetaContent(
+        html,
+        "twitter:image"
+      );
+
+    /* -------------------------
+       PRICE
+    ------------------------- */
+
+    const priceText =
+      getMetaContent(
+        html,
+        "product:price:amount"
+      ) ||
+      getMetaContent(
+        html,
+        "og:price:amount"
+      );
+
+    let price =
+      parseMoney(priceText);
+
+    /* -------------------------
+       ORIGINAL PRICE
+    ------------------------- */
+
+    const originalPriceText =
+      getMetaContent(
+        html,
+        "product:original_price:amount"
+      ) ||
+      getMetaContent(
+        html,
+        "product:original_price"
+      );
+
+    let originalPrice =
+      parseMoney(
+        originalPriceText
+      );
+
+    /*
+     * Fallback:
+     * tìm dữ liệu giá trong HTML/JSON.
+     *
+     * Đây chỉ là best-effort.
+     */
+
+    if (price == null) {
+      const pricePatterns = [
+        /"price"\s*:\s*"([0-9.,]+)"/i,
+        /"price"\s*:\s*([0-9.]+)/i,
+        /"current_price"\s*:\s*"([0-9.,]+)"/i,
+        /"current_price"\s*:\s*([0-9.]+)/i,
+      ];
+
+      for (
+        const pattern
+        of pricePatterns
+      ) {
+        const match =
+          html.match(pattern);
+
+        if (!match?.[1]) {
+          continue;
+        }
+
+        const candidate =
+          parseMoney(match[1]);
+
+        if (
+          candidate != null &&
+          candidate > 0
+        ) {
+          /*
+           * Một số payload Shopee có thể
+           * lưu tiền theo đơn vị 100000.
+           *
+           * Không tự chia ở đây vì không
+           * có đủ thông tin chắc chắn để
+           * phân biệt payload.
+           */
+          price = candidate;
+          break;
+        }
+      }
+    }
+
+    if (
+      originalPrice == null
+    ) {
+      const originalPatterns = [
+        /"price_before_discount"\s*:\s*"([0-9.,]+)"/i,
+        /"price_before_discount"\s*:\s*([0-9.]+)/i,
+        /"original_price"\s*:\s*"([0-9.,]+)"/i,
+        /"original_price"\s*:\s*([0-9.]+)/i,
+      ];
+
+      for (
+        const pattern
+        of originalPatterns
+      ) {
+        const match =
+          html.match(pattern);
+
+        if (!match?.[1]) {
+          continue;
+        }
+
+        const candidate =
+          parseMoney(match[1]);
+
+        if (
+          candidate != null &&
+          candidate > 0
+        ) {
+          originalPrice =
+            candidate;
+
+          break;
+        }
+      }
+    }
+
+    /*
+     * Nếu giá gốc <= giá hiện tại thì
+     * không cần hiển thị giá gạch ngang.
+     */
+    if (
+      price != null &&
+      originalPrice != null &&
+      originalPrice <= price
+    ) {
+      originalPrice = null;
+    }
+
+    return {
+      name,
+      imageUrl:
+        imageUrl?.trim() ||
+        null,
+      price,
+      originalPrice,
+    };
+  } catch (error) {
+    /*
+     * QUAN TRỌNG:
+     *
+     * Metadata không phải phần bắt buộc
+     * của affiliate tracking.
+     *
+     * Shopee block request / timeout /
+     * thay HTML thì affiliate vẫn phải
+     * hoạt động.
+     */
+    console.warn(
+      "Shopee metadata fetch failed:",
+      error instanceof Error
+        ? error.message
+        : error
+    );
+
+    return empty;
+  }
+}
+
+/* =========================================================
    MAIN
 ========================================================= */
 
-export async function POST(request: Request) {
+export async function POST(
+  request: Request
+) {
   try {
     // =====================================================
     // 1. BODY
@@ -99,7 +547,8 @@ export async function POST(request: Request) {
     let body: CreateLinkBody;
 
     try {
-      body = await request.json();
+      body =
+        await request.json();
     } catch {
       return NextResponse.json(
         {
@@ -111,7 +560,8 @@ export async function POST(request: Request) {
     }
 
     const inputUrl =
-      typeof body.url === "string"
+      typeof body.url ===
+      "string"
         ? body.url.trim()
         : "";
 
@@ -121,14 +571,10 @@ export async function POST(request: Request) {
         ? body.featured_product_id.trim()
         : "";
 
-    /*
-     * Nếu user tự dán link:
-     * -> bắt buộc phải có URL.
-     *
-     * Nếu đi từ featured product:
-     * -> URL thật sẽ lấy từ database.
-     */
-    if (!inputUrl && !featuredProductId) {
+    if (
+      !inputUrl &&
+      !featuredProductId
+    ) {
       return NextResponse.json(
         {
           error:
@@ -143,7 +589,9 @@ export async function POST(request: Request) {
     // =====================================================
 
     const authHeader =
-      request.headers.get("authorization");
+      request.headers.get(
+        "authorization"
+      );
 
     if (
       !authHeader ||
@@ -161,18 +609,24 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 3. XÁC THỰC USER
+    // 3. AUTH USER
     // =====================================================
 
     const userClient =
-      getUserClient(authHeader);
+      getUserClient(
+        authHeader
+      );
 
     const {
       data: { user },
       error: userError,
-    } = await userClient.auth.getUser();
+    } =
+      await userClient.auth.getUser();
 
-    if (userError || !user) {
+    if (
+      userError ||
+      !user
+    ) {
       console.error(
         "API /api/links auth error:",
         userError
@@ -188,10 +642,11 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 4. CHỌN URL NGUỒN
+    // 4. SOURCE URL
     // =====================================================
 
-    let sourceUrl = inputUrl;
+    let sourceUrl =
+      inputUrl;
 
     let validFeaturedProductId:
       | string
@@ -201,12 +656,6 @@ export async function POST(request: Request) {
       | string
       | null = null;
 
-    /*
-     * Nếu request xuất phát từ sản phẩm do Admin tạo,
-     * KHÔNG tin product URL từ browser.
-     *
-     * Server đọc URL thật từ featured_products.
-     */
     if (featuredProductId) {
       const adminClient =
         getAdminClient();
@@ -215,17 +664,23 @@ export async function POST(request: Request) {
         data: featuredProduct,
         error: featuredError,
       } = await adminClient
-        .from("featured_products")
-        .select(
-          `
-            id,
-            platform,
-            product_url,
-            is_active
-          `
+        .from(
+          "featured_products"
         )
-        .eq("id", featuredProductId)
-        .eq("is_active", true)
+        .select(`
+          id,
+          platform,
+          product_url,
+          is_active
+        `)
+        .eq(
+          "id",
+          featuredProductId
+        )
+        .eq(
+          "is_active",
+          true
+        )
         .maybeSingle();
 
       if (featuredError) {
@@ -256,7 +711,10 @@ export async function POST(request: Request) {
       const product =
         featuredProduct as FeaturedProduct;
 
-      if (!product.product_url?.trim()) {
+      if (
+        !product.product_url
+          ?.trim()
+      ) {
         return NextResponse.json(
           {
             error:
@@ -266,10 +724,6 @@ export async function POST(request: Request) {
         );
       }
 
-      /*
-       * URL do Admin lưu trong database
-       * là nguồn dữ liệu đáng tin cậy.
-       */
       sourceUrl =
         product.product_url.trim();
 
@@ -279,18 +733,21 @@ export async function POST(request: Request) {
       expectedPlatform =
         product.platform
           ?.trim()
-          .toLowerCase() || null;
+          .toLowerCase() ||
+        null;
     }
 
     // =====================================================
-    // 5. CHUẨN HÓA URL
+    // 5. NORMALIZE URL
     // =====================================================
 
     let rawUrl: string;
 
     try {
       rawUrl =
-        normalizeUrl(sourceUrl);
+        normalizeUrl(
+          sourceUrl
+        );
     } catch (error) {
       return NextResponse.json(
         {
@@ -304,11 +761,13 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 6. NHẬN DIỆN PLATFORM
+    // 6. PLATFORM
     // =====================================================
 
     let platform =
-      detectPlatform(rawUrl);
+      detectPlatform(
+        rawUrl
+      );
 
     if (!platform) {
       return NextResponse.json(
@@ -321,12 +780,13 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 7. KIỂM TRA PLATFORM FEATURED PRODUCT
+    // 7. FEATURED PLATFORM CHECK
     // =====================================================
 
     if (
       expectedPlatform &&
-      platform !== expectedPlatform
+      platform !==
+        expectedPlatform
     ) {
       console.error(
         "Featured product platform mismatch:",
@@ -352,23 +812,41 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 8. SHOPEE
+    // 8. PRODUCT METADATA
     // =====================================================
 
-    if (platform === "shopee") {
+    let metadata:
+      ProductMetadata = {
+        name: null,
+        imageUrl: null,
+        price: null,
+        originalPrice: null,
+      };
+
+    // =====================================================
+    // 9. SHOPEE
+    // =====================================================
+
+    if (
+      platform ===
+      "shopee"
+    ) {
       try {
         const parsedUrl =
           new URL(rawUrl);
 
         const hostname =
-          parsedUrl.hostname.toLowerCase();
+          parsedUrl.hostname
+            .toLowerCase();
 
         /*
          * Resolve Shopee short link.
          */
         if (
-          hostname === "s.shopee.vn" ||
-          hostname === "vn.shp.ee"
+          hostname ===
+            "s.shopee.vn" ||
+          hostname ===
+            "vn.shp.ee"
         ) {
           rawUrl =
             await resolveShopeeShortLink(
@@ -377,8 +855,7 @@ export async function POST(request: Request) {
         }
 
         /*
-         * Xóa affiliate/tracking cũ
-         * trước khi tạo tracking mới.
+         * Xóa affiliate/tracking cũ.
          */
         rawUrl =
           cleanShopeeAffiliateParams(
@@ -386,14 +863,16 @@ export async function POST(request: Request) {
           );
 
         /*
-         * Sau khi resolve short link,
-         * nhận diện lại platform.
+         * Nhận diện lại sau resolve.
          */
         const resolvedPlatform =
-          detectPlatform(rawUrl);
+          detectPlatform(
+            rawUrl
+          );
 
         if (
-          resolvedPlatform !== "shopee"
+          resolvedPlatform !==
+          "shopee"
         ) {
           return NextResponse.json(
             {
@@ -406,6 +885,43 @@ export async function POST(request: Request) {
 
         platform =
           resolvedPlatform;
+
+        /*
+         * Chỉ cần scrape metadata cho
+         * link user tự dán.
+         *
+         * Featured product đã có metadata
+         * chuẩn trong featured_products.
+         */
+        if (
+          !validFeaturedProductId
+        ) {
+          metadata =
+            await fetchShopeeMetadata(
+              rawUrl
+            );
+
+          console.log(
+            "Shopee metadata:",
+            {
+              hasName:
+                Boolean(
+                  metadata.name
+                ),
+
+              hasImage:
+                Boolean(
+                  metadata.imageUrl
+                ),
+
+              price:
+                metadata.price,
+
+              originalPrice:
+                metadata.originalPrice,
+            }
+          );
+        }
       } catch (error) {
         console.error(
           "Shopee URL processing error:",
@@ -425,27 +941,33 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 9. LAZADA
+    // 10. LAZADA
     // =====================================================
 
-    if (platform === "lazada") {
+    if (
+      platform ===
+      "lazada"
+    ) {
       try {
         const parsedUrl =
           new URL(rawUrl);
 
         const hostname =
-          parsedUrl.hostname.toLowerCase();
+          parsedUrl.hostname
+            .toLowerCase();
 
         /*
-         * Không resolve Lazada short link.
+         * Giữ nguyên logic hiện tại.
          *
-         * buildAffiliateUrl() sẽ xử lý:
+         * buildAffiliateUrl() xử lý:
          * sub_id1
          * laz_aff_id
          */
         if (
-          hostname === "s.lazada.vn" ||
-          hostname === "c.lazada.vn"
+          hostname ===
+            "s.lazada.vn" ||
+          hostname ===
+            "c.lazada.vn"
         ) {
           rawUrl =
             parsedUrl.toString();
@@ -467,7 +989,7 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 10. TẠO AFFILIATE URL
+    // 11. BUILD AFFILIATE URL
     // =====================================================
 
     const affiliate =
@@ -480,7 +1002,8 @@ export async function POST(request: Request) {
     console.log(
       "Creating affiliate link:",
       {
-        userId: user.id,
+        userId:
+          user.id,
 
         platform,
 
@@ -494,14 +1017,23 @@ export async function POST(request: Request) {
           Boolean(
             affiliate.affiliateUrl
           ),
+
+        hasProductMetadata:
+          Boolean(
+            metadata.name ||
+            metadata.imageUrl ||
+            metadata.price != null
+          ),
       }
     );
 
     // =====================================================
-    // 11. AFFILIATE KHÔNG KHẢ DỤNG
+    // 12. AFFILIATE NOT AVAILABLE
     // =====================================================
 
-    if (!affiliate.affiliateUrl) {
+    if (
+      !affiliate.affiliateUrl
+    ) {
       return NextResponse.json(
         {
           error:
@@ -512,7 +1044,8 @@ export async function POST(request: Request) {
                 "Không thể tạo affiliate link.",
 
           code:
-            affiliate.code || null,
+            affiliate.code ||
+            null,
         },
         {
           status:
@@ -525,25 +1058,26 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 12. LƯU AFFILIATE LINK
+    // 13. SAVE AFFILIATE LINK
     // =====================================================
 
     /*
-     * Vẫn insert bằng USER CLIENT.
+     * Vẫn dùng USER CLIENT để RLS
+     * kiểm soát insert.
      *
-     * Như vậy RLS của affiliate_links vẫn kiểm soát
-     * việc user chỉ tạo dữ liệu thuộc chính mình.
-     *
-     * Service role KHÔNG dùng để bypass việc này.
+     * Không dùng service role để insert.
      */
 
     const {
       data,
       error: insertError,
     } = await userClient
-      .from("affiliate_links")
+      .from(
+        "affiliate_links"
+      )
       .insert({
-        user_id: user.id,
+        user_id:
+          user.id,
 
         platform,
 
@@ -558,6 +1092,46 @@ export async function POST(request: Request) {
 
         featured_product_id:
           validFeaturedProductId,
+
+        /*
+         * Link user tự dán:
+         * lưu snapshot nếu lấy được.
+         *
+         * Featured product:
+         * metadata lấy từ
+         * featured_products nên để null
+         * tại đây cũng được.
+         */
+        product_name:
+          validFeaturedProductId
+            ? null
+            : metadata.name,
+
+        product_image_url:
+          validFeaturedProductId
+            ? null
+            : metadata.imageUrl,
+
+        product_price:
+          validFeaturedProductId
+            ? null
+            : metadata.price,
+
+        product_original_price:
+          validFeaturedProductId
+            ? null
+            : metadata.originalPrice,
+
+        /*
+         * Không tự hứa % cashback
+         * cho sản phẩm user tự dán.
+         *
+         * Commission thật sẽ được xác
+         * nhận khi affiliate order được
+         * import/đối soát.
+         */
+        cashback_percent:
+          null,
       })
       .select()
       .single();
@@ -584,7 +1158,7 @@ export async function POST(request: Request) {
     }
 
     // =====================================================
-    // 13. RESULT
+    // 14. RESULT
     // =====================================================
 
     return NextResponse.json({
@@ -599,7 +1173,8 @@ export async function POST(request: Request) {
 
     const errorCode =
       error &&
-      typeof error === "object" &&
+      typeof error ===
+        "object" &&
       "code" in error
         ? (
             error as {

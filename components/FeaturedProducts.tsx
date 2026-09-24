@@ -53,7 +53,7 @@ function platformInfo(platform: string) {
     case "shopee":
       return {
         name: "Shopee",
-        short: "S",
+        logo: "/platforms/shopee.png",
         badge:
           "border-orange-200 bg-orange-50 text-orange-600",
       };
@@ -61,7 +61,7 @@ function platformInfo(platform: string) {
     case "lazada":
       return {
         name: "Lazada",
-        short: "L",
+        logo: "/platforms/lazada.png",
         badge:
           "border-blue-200 bg-blue-50 text-blue-600",
       };
@@ -69,15 +69,15 @@ function platformInfo(platform: string) {
     case "tiktok":
       return {
         name: "TikTok Shop",
-        short: "♪",
+        logo: "/platforms/tiktok-shop.png",
         badge:
-          "border-gray-800 bg-gray-950 text-white",
+          "border-gray-200 bg-white text-gray-900",
       };
 
     default:
       return {
         name: platform,
-        short: "?",
+        logo: null,
         badge:
           "border-gray-200 bg-gray-100 text-gray-700",
       };
@@ -364,13 +364,19 @@ export default function FeaturedProducts() {
                         <span
                           className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black shadow-sm sm:text-xs ${info.badge}`}
                         >
-                          <span>
-                            {info.short}
-                          </span>
+                          {info.logo ? (
+  <img
+    src={info.logo}
+    alt=""
+    className="h-4 w-4 object-contain"
+  />
+) : (
+  <span>?</span>
+)}
 
-                          <span className="hidden sm:inline">
-                            {info.name}
-                          </span>
+<span className="hidden sm:inline">
+  {info.name}
+</span>
                         </span>
                       </div>
 
@@ -386,10 +392,20 @@ export default function FeaturedProducts() {
                       ) : (
                         <div className="flex h-full w-full items-center justify-center">
                           <div
-                            className={`flex h-16 w-16 items-center justify-center rounded-2xl border text-2xl font-black ${info.badge}`}
-                          >
-                            {info.short}
-                          </div>
+  className={`flex h-16 w-16 items-center justify-center rounded-2xl border p-3 ${info.badge}`}
+>
+  {info.logo ? (
+    <img
+      src={info.logo}
+      alt={info.name}
+      className="h-full w-full object-contain"
+    />
+  ) : (
+    <span className="text-2xl font-black">
+      ?
+    </span>
+  )}
+</div>
                         </div>
                       )}
 

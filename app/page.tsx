@@ -6,24 +6,24 @@ import FeaturedProducts from "@/components/FeaturedProducts";
 const platforms = [
   {
     name: "Shopee",
-    short: "S",
+    logo: "/platforms/shopee.png",
     description: "Mua sắm & nhận hoàn tiền",
     style:
-      "border-orange-100 bg-orange-50 text-orange-600",
+      "border-orange-100 bg-orange-50",
   },
   {
     name: "Lazada",
-    short: "L",
+    logo: "/platforms/lazada.png",
     description: "Deal hot mỗi ngày",
     style:
-      "border-blue-100 bg-blue-50 text-blue-600",
+      "border-blue-100 bg-blue-50",
   },
   {
     name: "TikTok Shop",
-    short: "♪",
+    logo: "/platforms/tiktok-shop.png",
     description: "Săn sale trên TikTok",
     style:
-      "border-gray-200 bg-gray-100 text-gray-950",
+      "border-gray-200 bg-gray-50",
   },
 ];
 
@@ -150,36 +150,44 @@ export default function Home() {
       </section>
 
       {/* PLATFORMS */}
-      <section className="border-y border-gray-200 bg-[#f7f8fa]">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
-          <div className="grid gap-3 sm:grid-cols-3">
-            {platforms.map((platform) => (
-              <div
-                key={platform.name}
-                className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm"
-              >
-                <div
-                  className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border text-lg font-black ${platform.style}`}
-                >
-                  {platform.short}
-                </div>
+<section className="border-y border-gray-200 bg-[#f7f8fa]">
+  <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6">
+    <div className="grid gap-3 sm:grid-cols-3">
+      {platforms.map((platform) => (
+        <div
+          key={platform.name}
+          className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+        >
+          {/* LOGO */}
+          <div
+            className={`flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border p-2.5 ${platform.style}`}
+          >
+            <img
+              src={platform.logo}
+              alt={`${platform.name} logo`}
+              className="h-full w-full object-contain"
+            />
+          </div>
 
-                <div className="min-w-0">
-                  <div className="font-black">
-                    {platform.name}
-                  </div>
+          {/* TEXT */}
+          <div className="min-w-0">
+            <div className="font-black text-gray-950">
+              {platform.name}
+            </div>
 
-                  <div className="mt-1 truncate text-xs text-gray-500">
-                    {platform.description}
-                  </div>
-                </div>
-              </div>
-            ))}
+            <div className="mt-1 truncate text-xs text-gray-500">
+              {platform.description}
+            </div>
           </div>
         </div>
-      </section>
-            {/* FEATURED PRODUCTS */}
+      ))}
+    </div>
+  </div>
+</section>
+
+{/* FEATURED PRODUCTS */}
 <FeaturedProducts />
+      <FeaturedProducts />
       {/* QUICK ACCESS */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">
         <div className="mb-6">
