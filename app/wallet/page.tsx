@@ -222,6 +222,7 @@ export default function WalletPage() {
     useState(false);
 
   const [amount, setAmount] = useState("");
+  const [withdrawPin, setWithdrawPin] = useState("");
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -615,6 +616,7 @@ export default function WalletPage() {
 
   function resetForm() {
     setAmount("");
+    setWithdrawPin("");
     setError("");
   }
 
@@ -693,6 +695,11 @@ export default function WalletPage() {
       return;
     }
 
+    if (!/^\d{6}$/.test(withdrawPin)) {
+      setError("Vui lòng nhập mã PIN rút tiền gồm đúng 6 chữ số.");
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -709,6 +716,7 @@ export default function WalletPage() {
             accountName.trim(),
           p_account_number:
             accountNumber.trim(),
+          p_pin: withdrawPin,
         }
       );
 
@@ -739,6 +747,18 @@ export default function WalletPage() {
           throw new Error(
             "Số tiền rút không hợp lệ."
           );
+        }
+
+        if (message.includes("INVALID_PIN")) {
+          throw new Error("Mã PIN rút tiền không đúng.");
+        }
+
+        if (message.includes("PIN_NOT_SET")) {
+          throw new Error("Bạn chưa thiết lập mã PIN rút tiền. Vui lòng vào Hồ sơ để tạo PIN.");
+        }
+
+        if (message.includes("INVALID_PIN_FORMAT")) {
+          throw new Error("Mã PIN phải gồm đúng 6 chữ số.");
         }
 
         if (
@@ -1113,6 +1133,27 @@ export default function WalletPage() {
                 </div>
 
                 <div className="md:col-span-2">
+                  <label className="text-sm font-bold text-gray-700">
+                    Mã PIN rút tiền
+                  </label>
+                  <input
+                    type="password"
+                    value={withdrawPin}
+                    onChange={(event) =>
+                      setWithdrawPin(event.target.value.replace(/\D/g, "").slice(0, 6))
+                    }
+                    inputMode="numeric"
+                    autoComplete="off"
+                    maxLength={6}
+                    placeholder="••••••"
+                    className="mt-2 w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-4 text-center font-mono text-xl font-black tracking-[0.55em] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                  />
+                  <p className="mt-2 text-xs text-gray-400">
+                    Nhập PIN 6 số đã thiết lập trong Hồ sơ để xác nhận yêu cầu rút tiền.
+                  </p>
+                </div>
+
+                <div className="md:col-span-2">
                   {profileBank?.bank_name &&
                   profileBank?.bank_account_name &&
                   profileBank?.bank_account_number ? (
@@ -1173,6 +1214,7 @@ export default function WalletPage() {
                     type="submit"
                     disabled={
                       submitting ||
+                      withdrawPin.length !== 6 ||
                       !profileBank?.bank_name ||
                       !profileBank?.bank_account_name ||
                       !profileBank?.bank_account_number

@@ -194,6 +194,86 @@ export default function ProfilePage() {
     setBankAccountName,
   ] = useState("");
 
+  // Withdrawal PIN is stored securely through Supabase RPCs; raw PIN is never saved in profiles.
+  const [pinMode, setPinMode] = useState<"idle" | "setup" | "change" | "forgot">("idle");
+  const [currentWithdrawPin, setCurrentWithdrawPin] = useState("");
+  const [withdrawPin, setWithdrawPin] = useState("");
+  const [confirmWithdrawPin, setConfirmWithdrawPin] = useState("");
+  const [savingPin, setSavingPin] = useState(false);
+  const [pinConfigured, setPinConfigured] = useState(false);
+
+  function normalizePin(value: string) {
+    return value.replace(/\D/g, "").slice(0, 6);
+  }
+
+  function closePinForm() {
+    setPinMode("idle");
+    setCurrentWithdrawPin("");
+    setWithdrawPin("");
+    setConfirmWithdrawPin("");
+  }
+
+  async function submitPin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    clearMessages();
+
+    if (savingPin) return;
+
+    if (pinMode === "change" && !/^\d{6}$/.test(currentWithdrawPin)) {
+      setError("Vui lòng nhập mã PIN hiện tại gồm đúng 6 chữ số.");
+      return;
+    }
+
+    if (!/^\d{6}$/.test(withdrawPin)) {
+      setError("Mã PIN mới phải gồm đúng 6 chữ số.");
+      return;
+    }
+
+    if (withdrawPin !== confirmWithdrawPin) {
+      setError("Mã PIN xác nhận không khớp.");
+      return;
+    }
+
+    setSavingPin(true);
+
+    try {
+      const supabase = createClient();
+      const { error: pinError } = pinMode === "change"
+        ? await supabase.rpc("change_withdrawal_pin", {
+            p_current_pin: currentWithdrawPin,
+            p_new_pin: withdrawPin,
+          })
+        : await supabase.rpc("set_withdrawal_pin", {
+            p_pin: withdrawPin,
+          });
+
+      if (pinError) {
+        const message = pinError.message || "";
+        if (message.includes("INVALID_PIN")) {
+          setError("Mã PIN hiện tại không đúng.");
+        } else if (message.includes("PIN_ALREADY_EXISTS")) {
+          setPinConfigured(true);
+          setError("Tài khoản đã có mã PIN. Hãy dùng chức năng Đổi mã PIN.");
+        } else if (message.includes("INVALID_PIN_FORMAT")) {
+          setError("Mã PIN phải gồm đúng 6 chữ số.");
+        } else {
+          console.error("Save withdrawal PIN error:", pinError);
+          setError("Không thể lưu mã PIN. Vui lòng thử lại.");
+        }
+        return;
+      }
+
+      setPinConfigured(true);
+      closePinForm();
+      showSuccess(pinMode === "change" ? "Mã PIN rút tiền đã được thay đổi." : "Mã PIN rút tiền đã được thiết lập.");
+    } catch (err) {
+      console.error("Save withdrawal PIN error:", err);
+      setError("Có lỗi kết nối đến hệ thống.");
+    } finally {
+      setSavingPin(false);
+    }
+  }
+
   useEffect(() => {
     let active = true;
 
@@ -260,6 +340,7 @@ export default function ProfilePage() {
           walletResult,
           ordersResult,
           referralStatsResult,
+          pinStatusResult,
         ] = await Promise.all([
           supabase
             .from("profiles")
@@ -280,6 +361,8 @@ export default function ProfilePage() {
           supabase.rpc(
             "get_my_referral_stats"
           ),
+
+          supabase.rpc("has_withdrawal_pin"),
         ]);
 
         if (!active) return;
@@ -318,6 +401,13 @@ export default function ProfilePage() {
           setBankAccountName(
             row.bank_account_name || ""
           );
+        }
+
+        if (pinStatusResult.error) {
+          console.error("Withdrawal PIN status error:", pinStatusResult.error);
+          setPinConfigured(false);
+        } else {
+          setPinConfigured(Boolean(pinStatusResult.data));
         }
 
         if (walletResult.error) {
@@ -695,11 +785,46 @@ export default function ProfilePage() {
       return;
     }
 
+    if (!pinConfigured) {
+      if (!/^\d{6}$/.test(withdrawPin)) {
+        setError("Vui lòng tạo mã PIN gồm đúng 6 chữ số.");
+        return;
+      }
+
+      if (withdrawPin !== confirmWithdrawPin) {
+        setError("Mã PIN xác nhận không khớp.");
+        return;
+      }
+    }
+
     setSavingBank(true);
 
     try {
       const supabase =
         createClient();
+
+      if (!pinConfigured) {
+        const { error: pinError } = await supabase.rpc("set_withdrawal_pin", {
+          p_pin: withdrawPin,
+        });
+
+        if (pinError) {
+          const message = pinError.message || "";
+          if (message.includes("PIN_ALREADY_EXISTS")) {
+            setPinConfigured(true);
+          } else {
+            console.error("Create withdrawal PIN error:", pinError);
+            setError(
+              message.includes("INVALID_PIN_FORMAT")
+                ? "Mã PIN phải gồm đúng 6 chữ số."
+                : "Không thể tạo mã PIN rút tiền. Vui lòng thử lại."
+            );
+            return;
+          }
+        } else {
+          setPinConfigured(true);
+        }
+      }
 
       const {
         data,
@@ -755,6 +880,9 @@ export default function ProfilePage() {
       setBankAccountName(
         updated.bank_account_name || ""
       );
+
+      setWithdrawPin("");
+      setConfirmWithdrawPin("");
 
       setEditingBank(false);
 
@@ -1264,7 +1392,141 @@ export default function ProfilePage() {
                           "—"
                         }
                       />
+
+                      <div className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <div className="text-sm font-bold text-gray-500">
+                            Mã PIN rút tiền
+                          </div>
+                          <div className="mt-1 text-xs text-gray-400">
+                            Mã PIN gồm đúng 6 số để xác nhận khi rút tiền.
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap items-center gap-3">
+                          <span
+                            className={`rounded-full px-3 py-1.5 text-xs font-black ${
+                              pinConfigured
+                                ? "bg-emerald-50 text-emerald-700"
+                                : "bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {pinConfigured ? "••••••" : "Chưa thiết lập"}
+                          </span>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              clearMessages();
+                              setPinMode(pinConfigured ? "change" : "setup");
+                            }}
+                            className="text-sm font-black text-emerald-600 hover:text-emerald-700"
+                          >
+                            {pinConfigured ? "Đổi mã PIN" : "Tạo mã PIN"}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              clearMessages();
+                              router.push("/forgot-pin");
+                            }}
+                            className="text-sm font-black text-gray-500 hover:text-emerald-700"
+                          >
+                            Quên mã PIN?
+                          </button>
+                        </div>
+                      </div>
                     </div>
+
+                    {pinMode !== "idle" && (
+                      <form
+                        onSubmit={submitPin}
+                        className="border-t border-gray-100 p-6 sm:px-7"
+                      >
+                        <div className="mb-5">
+                          <h3 className="font-black text-gray-900">
+                            {pinMode === "forgot"
+                              ? "Đặt lại mã PIN"
+                              : pinMode === "change"
+                                ? "Đổi mã PIN"
+                                : "Tạo mã PIN 6 số"}
+                          </h3>
+                          <p className="mt-1 text-xs leading-5 text-gray-500">
+                            {pinMode === "forgot"
+                              ? "Nhập mã PIN mới gồm đúng 6 chữ số."
+                              : "Mã PIN này sẽ được dùng để xác nhận yêu cầu rút tiền."}
+                          </p>
+                        </div>
+
+                        <div className={`grid gap-5 ${pinMode === "change" ? "sm:grid-cols-3" : "sm:grid-cols-2"}`}>
+                          {pinMode === "change" && (
+                            <FormField label="Mã PIN hiện tại" required>
+                              <input
+                                type="password"
+                                value={currentWithdrawPin}
+                                onChange={(e) => setCurrentWithdrawPin(normalizePin(e.target.value))}
+                                inputMode="numeric"
+                                autoComplete="current-password"
+                                maxLength={6}
+                                placeholder="••••••"
+                                className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-center font-mono text-xl font-black tracking-[0.5em] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                              />
+                            </FormField>
+                          )}
+
+                          <FormField
+                            label="Mã PIN mới"
+                            required
+                          >
+                            <input
+                              type="password"
+                              value={withdrawPin}
+                              onChange={(e) =>
+                                setWithdrawPin(normalizePin(e.target.value))
+                              }
+                              inputMode="numeric"
+                              autoComplete="new-password"
+                              maxLength={6}
+                              placeholder="••••••"
+                              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-center font-mono text-xl font-black tracking-[0.5em] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            />
+                          </FormField>
+
+                          <FormField label="Nhập lại mã PIN" required>
+                            <input
+                              type="password"
+                              value={confirmWithdrawPin}
+                              onChange={(e) =>
+                                setConfirmWithdrawPin(normalizePin(e.target.value))
+                              }
+                              inputMode="numeric"
+                              autoComplete="new-password"
+                              maxLength={6}
+                              placeholder="••••••"
+                              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-center font-mono text-xl font-black tracking-[0.5em] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            />
+                          </FormField>
+                        </div>
+
+                        <div className="mt-6 flex flex-col-reverse gap-3 border-t border-gray-100 pt-5 sm:flex-row sm:justify-end">
+                          <button
+                            type="button"
+                            onClick={closePinForm}
+                            className="h-12 rounded-2xl border border-gray-200 bg-white px-6 text-sm font-black text-gray-700 hover:bg-gray-50"
+                          >
+                            Hủy
+                          </button>
+                          <button
+                            type="submit"
+                            disabled={savingPin}
+                            className="h-12 rounded-2xl bg-emerald-500 px-6 text-sm font-black text-white shadow-md shadow-emerald-100 hover:bg-emerald-600"
+                          >
+                            {savingPin ? "Đang lưu..." : "Lưu mã PIN"}
+                          </button>
+                        </div>
+                      </form>
+                    )}
 
                     <div className="border-t border-gray-100 p-6 sm:px-7">
                       <div className="flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50 p-4">
@@ -1416,6 +1678,84 @@ export default function ProfilePage() {
                         sai thông tin khi xử lý
                         rút tiền.
                       </p>
+                    </div>
+
+                    <div className="sm:col-span-2 border-t border-gray-100 pt-5">
+                      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <div className="text-sm font-black text-gray-700">
+                            Mã PIN rút tiền
+                          </div>
+                          <p className="mt-1 text-xs text-gray-400">
+                            PIN gồm đúng 6 số và nằm chung với tài khoản nhận tiền.
+                          </p>
+                        </div>
+
+                        {pinConfigured && (
+                          <div className="flex gap-4">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                clearMessages();
+                                setPinMode("change");
+                              }}
+                              className="text-xs font-black text-emerald-600"
+                            >
+                              Đổi mã PIN
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                clearMessages();
+                                router.push("/forgot-pin");
+                              }}
+                              className="text-xs font-black text-gray-500"
+                            >
+                              Quên mã PIN?
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {!pinConfigured && (
+                        <div className="grid gap-5 sm:grid-cols-2">
+                          <FormField label="Mã PIN 6 số" required>
+                            <input
+                              type="password"
+                              value={withdrawPin}
+                              onChange={(e) =>
+                                setWithdrawPin(normalizePin(e.target.value))
+                              }
+                              inputMode="numeric"
+                              maxLength={6}
+                              autoComplete="new-password"
+                              placeholder="••••••"
+                              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-center font-mono text-xl font-black tracking-[0.5em] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            />
+                          </FormField>
+
+                          <FormField label="Nhập lại mã PIN" required>
+                            <input
+                              type="password"
+                              value={confirmWithdrawPin}
+                              onChange={(e) =>
+                                setConfirmWithdrawPin(normalizePin(e.target.value))
+                              }
+                              inputMode="numeric"
+                              maxLength={6}
+                              autoComplete="new-password"
+                              placeholder="••••••"
+                              className="w-full rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3.5 text-center font-mono text-xl font-black tracking-[0.5em] outline-none transition focus:border-emerald-400 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                            />
+                          </FormField>
+                        </div>
+                      )}
+
+                      {pinConfigured && (
+                        <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700">
+                          ✓ Mã PIN 6 số đã được thiết lập
+                        </div>
+                      )}
                     </div>
                   </div>
 

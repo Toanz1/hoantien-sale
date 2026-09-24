@@ -221,9 +221,10 @@ export default function HomeAuthNav() {
 
       {/* NOTIFICATION */}
       <Link
-        href="/profile"
+        href="/notifications"
         aria-label="Thông báo"
         className="flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600"
+
       >
         <svg
           viewBox="0 0 24 24"
