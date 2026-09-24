@@ -385,6 +385,8 @@ export default function AdminDashboardPage() {
           <h2 className="mb-4 text-xl font-black">Quản trị nhanh</h2>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <Quick href="/admin/users" title="Người dùng" desc="User, đơn, ví và thông tin nhận tiền." />
+            <Quick
+  href="/admin/products" title="Sản phẩm" desc="Thêm, sửa và quản lý sản phẩm hiển thị trên trang chủ." />
             <Quick href="/admin/orders" title="Đơn hàng" desc="Kiểm tra order và wallet ledger." />
             <Quick href="/admin/withdrawals" title="Rút tiền" desc="Xử lý yêu cầu rút tiền." />
             <Quick href="/admin/import/shopee" title="Import Shopee" desc="Nhập báo cáo Shopee Affiliate." />
