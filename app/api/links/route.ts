@@ -10,14 +10,35 @@ import {
   cleanShopeeAffiliateParams,
 } from "@/lib/url";
 
+type CreateLinkBody = {
+  url?: unknown;
+  featured_product_id?: unknown;
+};
+
 export async function POST(request: Request) {
   try {
     // ==========================================
-    // 1. Lấy URL người dùng nhập
+    // 1. Lấy dữ liệu người dùng gửi lên
     // ==========================================
-    const body = await request.json();
+    let body: CreateLinkBody;
+
+    try {
+      body = await request.json();
+    } catch {
+      return NextResponse.json(
+        {
+          error: "Dữ liệu gửi lên không hợp lệ.",
+        },
+        { status: 400 }
+      );
+    }
 
     const inputUrl = String(body.url || "").trim();
+
+    const featuredProductId =
+      typeof body.featured_product_id === "string"
+        ? body.featured_product_id.trim() || null
+        : null;
 
     if (!inputUrl) {
       return NextResponse.json(
@@ -63,14 +84,13 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 4. Xử lý riêng cho Shopee
+    // 4. Xử lý riêng Shopee
     // ==========================================
     if (platform === "shopee") {
       try {
         const parsedUrl = new URL(rawUrl);
         const hostname = parsedUrl.hostname.toLowerCase();
 
-        // Resolve Shopee short link
         if (
           hostname === "s.shopee.vn" ||
           hostname === "vn.shp.ee"
@@ -78,13 +98,7 @@ export async function POST(request: Request) {
           rawUrl = await resolveShopeeShortLink(rawUrl);
         }
 
-        // Xóa tracking Affiliate cũ
         rawUrl = cleanShopeeAffiliateParams(rawUrl);
-
-        console.log(
-          "Shopee URL sau khi resolve:",
-          rawUrl
-        );
 
         platform = detectPlatform(rawUrl);
 
@@ -116,7 +130,7 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 5. Xử lý riêng cho Lazada
+    // 5. Xử lý riêng Lazada
     // ==========================================
     if (platform === "lazada") {
       try {
@@ -124,17 +138,6 @@ export async function POST(request: Request) {
         const hostname =
           parsedUrl.hostname.toLowerCase();
 
-        /*
-         * Lazada short link:
-         * https://s.lazada.vn/...
-         *
-         * Không resolve trước.
-         * Giữ nguyên URL do Lazada tạo.
-         * buildAffiliateUrl() sẽ thêm:
-         *
-         * sub_id1 = trackingId
-         * laz_aff_id = affiliateId
-         */
         if (
           hostname === "s.lazada.vn" ||
           hostname === "c.lazada.vn"
@@ -175,10 +178,35 @@ export async function POST(request: Request) {
     // ==========================================
     // 7. Supabase client theo user token
     // ==========================================
+    const supabaseUrl =
+      process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+    const supabaseAnonKey =
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error(
+        "API /api/links: Missing Supabase environment variables"
+      );
+
+      return NextResponse.json(
+        {
+          error:
+            "Server chưa được cấu hình đầy đủ.",
+        },
+        { status: 500 }
+      );
+    }
+
     const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      supabaseUrl,
+      supabaseAnonKey,
       {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false,
+        },
+
         global: {
           headers: {
             Authorization: authHeader,
@@ -211,7 +239,77 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 9. Tạo Affiliate URL
+    // 9. Nếu link đến từ sản phẩm Admin,
+    //    xác thực sản phẩm tồn tại + đang hiển thị
+    // ==========================================
+    let validFeaturedProductId: string | null = null;
+
+    if (featuredProductId) {
+      const { data: featuredProduct, error } =
+        await supabase
+          .from("featured_products")
+          .select(
+            `
+              id,
+              platform,
+              product_url,
+              is_active
+            `
+          )
+          .eq("id", featuredProductId)
+          .eq("is_active", true)
+          .maybeSingle();
+
+      if (error) {
+        console.error(
+          "Load featured product error:",
+          error
+        );
+
+        return NextResponse.json(
+          {
+            error:
+              "Không thể kiểm tra thông tin sản phẩm.",
+          },
+          { status: 500 }
+        );
+      }
+
+      if (!featuredProduct) {
+        return NextResponse.json(
+          {
+            error:
+              "Sản phẩm không tồn tại hoặc đã ngừng hiển thị.",
+          },
+          { status: 404 }
+        );
+      }
+
+      /*
+       * Không tin platform do client gửi.
+       * Kiểm tra sản phẩm Admin có cùng sàn với URL
+       * đang được xử lý hay không.
+       */
+      const productPlatform = String(
+        featuredProduct.platform || ""
+      ).toLowerCase();
+
+      if (productPlatform !== platform) {
+        return NextResponse.json(
+          {
+            error:
+              "Link sản phẩm không khớp với sàn đã cấu hình.",
+          },
+          { status: 400 }
+        );
+      }
+
+      validFeaturedProductId =
+        featuredProduct.id;
+    }
+
+    // ==========================================
+    // 10. Tạo Affiliate URL
     // ==========================================
     const affiliate =
       await buildAffiliateUrl(
@@ -225,41 +323,43 @@ export async function POST(request: Request) {
       {
         userId: user.id,
         platform,
-        originalUrl: rawUrl,
-        trackingId: affiliate.trackingId,
+        trackingId:
+          affiliate.trackingId,
+        featuredProductId:
+          validFeaturedProductId,
         hasAffiliateUrl:
           Boolean(affiliate.affiliateUrl),
       }
     );
 
     // ==========================================
-    // 10. Kiểm tra tạo Affiliate URL
+    // 11. Kiểm tra Affiliate URL
     // ==========================================
     if (!affiliate.affiliateUrl) {
-  return NextResponse.json(
-    {
-      error:
-        affiliate.code ===
-        "PRODUCT_NOT_ELIGIBLE"
-          ? "Sản phẩm này hiện chưa có chương trình hoa hồng qua hệ thống."
-          : affiliate.message ||
-            "Không thể tạo affiliate link.",
+      return NextResponse.json(
+        {
+          error:
+            affiliate.code ===
+            "PRODUCT_NOT_ELIGIBLE"
+              ? "Sản phẩm này hiện chưa có chương trình hoa hồng qua hệ thống."
+              : affiliate.message ||
+                "Không thể tạo affiliate link.",
 
-      code:
-        affiliate.code || null,
-    },
-    {
-      status:
-        affiliate.code ===
-        "PRODUCT_NOT_ELIGIBLE"
-          ? 422
-          : 400,
+          code:
+            affiliate.code || null,
+        },
+        {
+          status:
+            affiliate.code ===
+            "PRODUCT_NOT_ELIGIBLE"
+              ? 422
+              : 400,
+        }
+      );
     }
-  );
-}
 
     // ==========================================
-    // 11. Lưu database
+    // 12. Lưu database
     // ==========================================
     const { data, error } =
       await supabase
@@ -272,6 +372,11 @@ export async function POST(request: Request) {
             affiliate.affiliateUrl,
           tracking_id:
             affiliate.trackingId,
+
+          // NULL nếu user tự dán link.
+          // Có ID nếu user bấm sản phẩm Admin.
+          featured_product_id:
+            validFeaturedProductId,
         })
         .select()
         .single();
@@ -293,47 +398,48 @@ export async function POST(request: Request) {
     }
 
     // ==========================================
-    // 12. Trả kết quả
+    // 13. Trả kết quả
     // ==========================================
     return NextResponse.json({
       success: true,
       link: data,
     });
-    } catch (error) {
-  console.error(
-    "API /api/links error:",
-    error
-  );
+  } catch (error) {
+    console.error(
+      "API /api/links error:",
+      error
+    );
 
-  const errorCode =
-    error &&
-    typeof error === "object" &&
-    "code" in error
-      ? (error as { code?: string }).code
-      : undefined;
+    const errorCode =
+      error &&
+      typeof error === "object" &&
+      "code" in error
+        ? (error as { code?: string }).code
+        : undefined;
 
-  if (
-    errorCode ===
-    "PRODUCT_NOT_ELIGIBLE"
-  ) {
+    if (
+      errorCode ===
+      "PRODUCT_NOT_ELIGIBLE"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Sản phẩm này hiện chưa có chương trình hoa hồng qua hệ thống.",
+          code:
+            "PRODUCT_NOT_ELIGIBLE",
+        },
+        { status: 422 }
+      );
+    }
+
     return NextResponse.json(
       {
         error:
-          "Sản phẩm này hiện chưa có chương trình hoa hồng qua hệ thống.",
-        code: "PRODUCT_NOT_ELIGIBLE",
+          error instanceof Error
+            ? error.message
+            : "Có lỗi xảy ra trên server.",
       },
-      { status: 422 }
+      { status: 500 }
     );
   }
-
-  return NextResponse.json(
-    {
-      error:
-        error instanceof Error
-          ? error.message
-          : "Có lỗi xảy ra trên server.",
-    },
-    { status: 500 }
-  );
-    }
-  }
+}
