@@ -102,21 +102,21 @@ export default function Footer() {
 
             <div className="mt-3 space-y-2 text-sm text-gray-200">
               <Link
-                href="/terms"
+                href="/dieu-khoan-su-dung"
                 className="block transition hover:text-emerald-400"
               >
                 Điều khoản sử dụng
               </Link>
 
               <Link
-                href="/privacy"
+                href="/chinh-sach-bao-mat"
                 className="block transition hover:text-emerald-400"
               >
                 Chính sách bảo mật
               </Link>
 
               <Link
-                href="/security"
+                href="/ bao-mat-tai-khoan"
                 className="block transition hover:text-emerald-400"
               >
                 Bảo mật tài khoản

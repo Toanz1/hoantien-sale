@@ -428,125 +428,89 @@ export default function ProfilePage() {
 
 
 
-  async function submitPin(event: FormEvent<HTMLFormElement>) {
+ async function submitPin(event: FormEvent<HTMLFormElement>) {
+  event.preventDefault();
+  clearMessages();
 
-    event.preventDefault();
+  if (savingPin) return;
 
-    clearMessages();
+  if (
+    pinMode === "change" &&
+    !/^\d{6}$/.test(currentWithdrawPin)
+  ) {
+    setError("Vui lòng nhập mã PIN hiện tại gồm đúng 6 chữ số.");
+    return;
+  }
 
+  if (!/^\d{6}$/.test(withdrawPin)) {
+    setError("Mã PIN mới phải gồm đúng 6 chữ số.");
+    return;
+  }
 
+  if (withdrawPin !== confirmWithdrawPin) {
+    setError("Mã PIN xác nhận không khớp.");
+    return;
+  }
 
-    if (savingPin) return;
+  setSavingPin(true);
 
+  try {
+    const supabase = createClient();
 
-
-    if (pinMode === "change" && !/^\d{6}$/.test(currentWithdrawPin)) {
-
-      setError("Vui lòng nhập mã PIN hiện tại gồm đúng 6 chữ số.");
-
-      return;
-
-    }
-
-
-
-    if (!/^\d{6}$/.test(withdrawPin)) {
-
-      setError("Mã PIN mới phải gồm đúng 6 chữ số.");
-
-      return;
-
-    }
-
-
-
-    if (withdrawPin !== confirmWithdrawPin) {
-
-      setError("Mã PIN xác nhận không khớp.");
-
-      return;
-
-    }
-
-
-
-    setSavingPin(true);
-
-
-
-    try {
-
-      const supabase = createClient();
-
-      const { error: pinError } = pinMode === "change"
-
+    const { error: pinError } =
+      pinMode === "change"
         ? await supabase.rpc("change_withdrawal_pin", {
-
             p_current_pin: currentWithdrawPin,
-
             p_new_pin: withdrawPin,
-
           })
-
         : await supabase.rpc("set_withdrawal_pin", {
-
             p_pin: withdrawPin,
-
           });
 
+    if (pinError) {
+      console.error("Save withdrawal PIN error:", pinError);
 
+      const message = pinError.message || "";
 
-      if (pinError) {
-
-        const message = pinError.message || "";
-
-        if (message.includes("INVALID_PIN")) {
-
-          setError("Mã PIN hiện tại không đúng.");
-
-        } else if (message.includes("PIN_ALREADY_EXISTS")) {
-
-          setPinConfigured(true);
-
-          setError("Tài khoản đã có mã PIN. Hãy dùng chức năng Đổi mã PIN.");
-
-        } else if (message.includes("INVALID_PIN_FORMAT")) {
-
-          setError("Mã PIN phải gồm đúng 6 chữ số.");
-
-        } else {
-
-          console.error("Save withdrawal PIN error:", pinError);
-
-          setError("Không thể lưu mã PIN. Vui lòng thử lại.");
-
-        }
-
-        return;
-
+      if (message.includes("INVALID_PIN_FORMAT")) {
+        setError("Mã PIN phải gồm đúng 6 chữ số.");
+      } else if (message.includes("INVALID_PIN")) {
+        setError("Mã PIN hiện tại không đúng.");
+      } else if (message.includes("PIN_ALREADY_EXISTS")) {
+        setPinConfigured(true);
+        setError(
+          "Tài khoản đã có mã PIN. Hãy dùng chức năng Đổi mã PIN."
+        );
+      } else {
+        setError(
+          `Lỗi PIN: ${pinError.message}${
+            pinError.details
+              ? ` - ${pinError.details}`
+              : ""
+          }`
+        );
       }
 
-
-
-      setPinConfigured(true);
-
-      closePinForm();
-
-      showSuccess(pinMode === "change" ? "Mã PIN rút tiền đã được thay đổi." : "Mã PIN rút tiền đã được thiết lập.");
-
-    } catch (err) {
-
-      console.error("Save withdrawal PIN error:", err);
-
-      setError("Có lỗi kết nối đến hệ thống.");
-
-    } finally {
-
-      setSavingPin(false);
-
+      // QUAN TRỌNG:
+      // RPC lỗi thì dừng tại đây.
+      return;
     }
 
+    setPinConfigured(true);
+    closePinForm();
+
+    showSuccess(
+      pinMode === "change"
+        ? "Mã PIN rút tiền đã được thay đổi."
+        : "Mã PIN rút tiền đã được thiết lập."
+    );
+  } catch (err) {
+    console.error("Save withdrawal PIN error:", err);
+    setError("Có lỗi kết nối đến hệ thống.");
+  } finally {
+    setSavingPin(false);
   }
+}
 
 
 
