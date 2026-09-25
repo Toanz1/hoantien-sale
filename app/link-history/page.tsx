@@ -612,8 +612,6 @@ export default function LinkHistoryPage() {
 
 
 
-            Mua sắm hoàn tiền
-
 
 
           </Link>

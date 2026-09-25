@@ -57,7 +57,7 @@ export default function TikTokShopCashbackPage() {
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
           <BrandLogo />
-          <div className="hidden text-xs font-bold text-gray-600 md:block">Mua sắm hoàn tiền</div>
+          <div className="hidden text-xs font-bold text-gray-600 md:block"></div>
           <div className="flex justify-end"><HomeAuthNav /></div>
         </div>
       </header>

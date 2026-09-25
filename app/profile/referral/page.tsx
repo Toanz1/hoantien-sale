@@ -145,7 +145,7 @@ export default function ReferralPage() {
           <BrandLogo />
 
           <div className="hidden whitespace-nowrap text-sm font-bold text-gray-700 md:block">
-            Mua sắm hoàn tiền
+            
           </div>
 
           <div className="flex justify-end">

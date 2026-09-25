@@ -10,7 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Hoàn Tiền Sale - Mua sắm hoàn tiền",
+  title: "Hoàn Tiền Sale ",
 
   description:
     "Hoàn tiền khi mua sắm Shopee, Lazada và TikTok Shop",

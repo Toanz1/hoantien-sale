@@ -69,7 +69,7 @@ function getTitle(pathname: string) {
     return "Chi tiết sản phẩm | Hoàn Tiền Sale";
   }
 
-  return "Hoàn Tiền Sale - Mua sắm hoàn tiền";
+  return "Hoàn Tiền Sale";
 }
 
 export default function PageTitle() {

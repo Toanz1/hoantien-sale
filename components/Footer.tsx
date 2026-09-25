@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
 
         <p className="mt-2 text-center text-xs font-bold text-emerald-400">
-          Mua sắm hoàn tiền Shopee, Lazada, TikTok Shop
+           Shopee, Lazada, TikTok Shop
         </p>
 
         {/* MENU */}
