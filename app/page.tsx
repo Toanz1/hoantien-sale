@@ -83,9 +83,6 @@ export default function Home() {
       {/* FEATURED PRODUCTS */}
       <FeaturedProducts />
 
-      {/* FEATURED PRODUCTS */}
-      <FeaturedProducts />
-
       
     </main>
   );
