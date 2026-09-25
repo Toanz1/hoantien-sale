@@ -4,7 +4,7 @@ import LinkForm from "@/components/LinkForm";
 import HomeAuthNav from "@/components/HomeAuthNav";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import BrandLogo from "@/components/BrandLogo";
-import QuickFeatures from "@/components/QuickFeatures";
+import HomeCoupons from "@/components/HomeCoupons";
 
 
 const steps = [
@@ -77,8 +77,11 @@ export default function Home() {
           </div>
         </div>
       </section>
-<QuickFeatures />
-      
+            {/* HOT COUPONS */}
+      <HomeCoupons />
+
+      {/* FEATURED PRODUCTS */}
+      <FeaturedProducts />
 
       {/* FEATURED PRODUCTS */}
       <FeaturedProducts />
