@@ -140,24 +140,24 @@ export default function HomeAuthNav() {
   }
 
   if (!email) {
-    return (
-      <div className="flex items-center gap-2">
-        <Link
-          href="/login"
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 sm:px-4 sm:text-sm"
-        >
-          Đăng nhập
-        </Link>
+  return (
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      <Link
+        href="/login"
+        className="whitespace-nowrap rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-xs font-bold text-gray-700 transition hover:bg-gray-50 sm:px-4 sm:text-sm"
+      >
+        Đăng nhập
+      </Link>
 
-        <Link
-          href="/register"
-          className="rounded-xl bg-emerald-500 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-600 sm:px-4 sm:text-sm"
-        >
-          Đăng ký
-        </Link>
-      </div>
-    );
-  }
+      <Link
+        href="/register"
+        className="whitespace-nowrap rounded-xl bg-emerald-500 px-3 py-2.5 text-xs font-bold text-white transition hover:bg-emerald-600 sm:px-4 sm:text-sm"
+      >
+        Đăng ký
+      </Link>
+    </div>
+  );
+}
 
   const displayName = fullName || email.split("@")[0] || "Tài khoản";
   const avatarLetter = displayName.charAt(0).toUpperCase() || "U";

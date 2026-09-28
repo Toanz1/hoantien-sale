@@ -5,7 +5,7 @@ import HomeAuthNav from "@/components/HomeAuthNav";
 import FeaturedProducts from "@/components/FeaturedProducts";
 import BrandLogo from "@/components/BrandLogo";
 import HomeCoupons from "@/components/HomeCoupons";
-
+import Link from "next/link";
 
 const steps = [
   {
@@ -35,16 +35,32 @@ export default function Home() {
     <main id="top" className="min-h-screen bg-[#f7f8fa] text-gray-900">
       {/* HEADER */}
       <header className="sticky top-0 z-50 border-b border-gray-200/80 bg-white/95 backdrop-blur-xl">
-        <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
-          <BrandLogo />
-          <div className="hidden text-xs font-bold text-gray-600 md:block">
-            Mua sắm hoàn tiền
-          </div>
-          <div className="flex justify-end">
-            <HomeAuthNav />
-          </div>
-        </div>
-      </header>
+  <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-2 px-3 sm:px-6 lg:px-8">
+    
+    {/* LOGO MOBILE */}
+    <Link
+      href="/"
+      className="flex shrink-0 items-center sm:hidden"
+      aria-label="Hoàn Tiền Sale"
+    >
+      <img
+        src="/platforms/hoantiensale.png"
+        alt="Hoàn Tiền Sale"
+        className="h-11 w-11 object-contain"
+      />
+    </Link>
+
+    {/* LOGO TABLET / DESKTOP */}
+    <div className="hidden min-w-0 sm:block">
+      <BrandLogo />
+    </div>
+
+    {/* AUTH */}
+    <div className="ml-auto flex shrink-0 justify-end">
+      <HomeAuthNav />
+    </div>
+  </div>
+</header>
 
       {/* HERO SECTION */}
       <section className="relative overflow-hidden bg-white py-8 sm:py-12">
