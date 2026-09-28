@@ -13,6 +13,9 @@ const siteUrl = "https://hoantien-sale.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
+verification: {
+  google: "kvJRvgYA3W2A0v6rIcyVRA6mnbsM2uUGYL_7fZewgBI",
+},
 
   title: {
     default: "Hoàn Tiền Sale - Mua sắm hoàn tiền",
@@ -106,7 +109,7 @@ export default function RootLayout({
 
         {children}
 
-        <Footer />
+    
       </body>
     </html>
   );
