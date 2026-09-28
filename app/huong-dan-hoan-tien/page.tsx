@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Footer from "@/components/Footer";
 import BrandLogo from "@/components/BrandLogo";
 import HomeAuthNav from "@/components/HomeAuthNav";
 
