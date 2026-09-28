@@ -3,7 +3,6 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 
 import Footer from "@/components/Footer";
-import PageTitle from "@/components/PageTitle";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -13,9 +12,10 @@ const siteUrl = "https://hoantien-sale.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-verification: {
-  google: "kvJRvgYA3W2A0v6rIcyVRA6mnbsM2uUGYL_7fZewgBI",
-},
+
+  verification: {
+    google: "kvJRvgYA3W2A0v6rIcyVRA6mnbsM2uUGYL_7fZewgBI",
+  },
 
   title: {
     default: "Hoàn Tiền Sale - Mua sắm hoàn tiền",
@@ -39,18 +39,9 @@ verification: {
     "cashback TikTok Shop",
   ],
 
-  authors: [
-    {
-      name: "Hoàn Tiền Sale",
-    },
-  ],
-
+  authors: [{ name: "Hoàn Tiền Sale" }],
   creator: "Hoàn Tiền Sale",
   publisher: "Hoàn Tiền Sale",
-
-  alternates: {
-    canonical: "/",
-  },
 
   icons: {
     icon: "/platforms/hoantiensale.png",
@@ -105,11 +96,8 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body className={inter.className}>
-        <PageTitle />
-
         {children}
-
-    
+        
       </body>
     </html>
   );

@@ -6,7 +6,27 @@ import FeaturedProducts from "@/components/FeaturedProducts";
 import BrandLogo from "@/components/BrandLogo";
 import HomeCoupons from "@/components/HomeCoupons";
 import Link from "next/link";
+import type { Metadata } from "next";
+export const metadata: Metadata = {
+  title: {
+    absolute: "Hoàn Tiền Sale - Mua sắm hoàn tiền",
+  },
 
+  description:
+    "Tạo link mua sắm hoàn tiền Shopee, Lazada và TikTok Shop. Theo dõi đơn hàng, tiền hoàn và rút tiền tại Hoàn Tiền Sale.",
+
+  alternates: {
+    canonical: "/",
+  },
+
+  openGraph: {
+    title: "Hoàn Tiền Sale - Mua sắm hoàn tiền",
+    description:
+      "Tạo link mua sắm hoàn tiền Shopee, Lazada và TikTok Shop.",
+    url: "/",
+    type: "website",
+  },
+};
 const steps = [
   {
     number: "01",
