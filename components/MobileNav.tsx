@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 
 const items = [
   {
-    href: "/dashboard",
-    label: "Tổng quan",
+    href: "/",
+    label: "Trang chủ",
     icon: "⌂",
   },
   {
@@ -20,9 +20,9 @@ const items = [
     icon: "◈",
   },
   {
-    href: "/",
-    label: "Mua sắm",
-    icon: "＋",
+    href: "/profile",
+    label: "Tài khoản",
+    icon: "○",
   },
 ];
 
