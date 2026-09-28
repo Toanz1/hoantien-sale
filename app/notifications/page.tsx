@@ -1,13 +1,12 @@
 "use client";
-
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import BrandLogo from "@/components/BrandLogo";
 import HomeAuthNav from "@/components/HomeAuthNav";
 import { createClient } from "@/lib/supabase/client";
-
 type NotificationItem = {
   id: string;
+  order_id?: string | null;
   type?: string;
   category?: string;
   title: string;
@@ -17,7 +16,6 @@ type NotificationItem = {
   date?: string;
   time?: string;
 };
-
 export default function NotificationsPage() {
   const [notifPermission, setNotifPermission] = useState<string>("default");
   const [showModal, setShowModal] = useState(false);
@@ -25,37 +23,31 @@ export default function NotificationsPage() {
     title: "Chưa cho phép",
     desc: "Chọn Cho phép khi trình duyệt hỏi quyền thông báo.",
   });
-
   const [activeTab, setActiveTab] = useState<string>("all");
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     if (typeof window !== "undefined" && "Notification" in window) {
       setNotifPermission(Notification.permission);
     }
     fetchNotifications();
   }, []);
-
   // Hàm tải danh sách thông báo từ Supabase
   async function fetchNotifications() {
     try {
       setLoading(true);
       const supabase = createClient();
       const { data: { user } } = await supabase.auth.getUser();
-
       if (!user) {
         setLoading(false);
         return;
       }
-
       // Truy vấn bảng thông báo của người dùng
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
-
       if (error) {
         console.error("Lỗi tải thông báo:", error);
       } else if (data) {
@@ -67,13 +59,11 @@ export default function NotificationsPage() {
       setLoading(false);
     }
   }
-
   const handleEnableNotifications = async () => {
     if (!("Notification" in window)) {
       alert("Trình duyệt của bạn không hỗ trợ thông báo đẩy.");
       return;
     }
-
     if (Notification.permission === "granted") {
       setModalMessage({
         title: "Đã bật thông báo",
@@ -82,7 +72,6 @@ export default function NotificationsPage() {
       setShowModal(true);
       return;
     }
-
     if (Notification.permission === "denied") {
       setModalMessage({
         title: "Đang bị chặn thông báo",
@@ -91,11 +80,9 @@ export default function NotificationsPage() {
       setShowModal(true);
       return;
     }
-
     try {
       const permission = await Notification.requestPermission();
       setNotifPermission(permission);
-
       if (permission === "granted") {
         setModalMessage({
           title: "Thành công",
@@ -113,7 +100,6 @@ export default function NotificationsPage() {
       console.error("Lỗi xin quyền thông báo:", error);
     }
   };
-
   // Hàm chuẩn hóa phân loại tab dựa vào kiểu thông báo trong DB
   const getCategory = (item: any) => {
     const type = (item.type || item.category || "").toLowerCase();
@@ -122,13 +108,11 @@ export default function NotificationsPage() {
     if (type.includes("withdraw") || type.includes("rut_tien")) return "withdraw";
     return "news";
   };
-
   // Lọc thông báo theo tab
   const filteredNotifications = notifications.filter((item) => {
     if (activeTab === "all") return true;
     return getCategory(item) === activeTab;
   });
-
   return (
     <main className="min-h-screen bg-[#f7f8fa] text-gray-900">
       {/* HEADER */}
@@ -136,14 +120,12 @@ export default function NotificationsPage() {
         <div className="mx-auto grid h-16 max-w-7xl grid-cols-[1fr_auto] items-center gap-4 px-4 sm:px-6 md:grid-cols-[1fr_auto_1fr] lg:px-8">
           <BrandLogo />
           <div className="hidden text-xs font-bold text-gray-600 md:block">
-            
           </div>
           <div className="flex justify-end">
             <HomeAuthNav />
           </div>
         </div>
       </header>
-
       {/* MAIN CONTENT */}
       <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6">
         <div className="mb-6 flex items-center gap-2">
@@ -154,7 +136,6 @@ export default function NotificationsPage() {
             ← Trang chủ
           </Link>
         </div>
-
         <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm sm:p-8 relative">
           <div className="flex items-center gap-3.5 border-b border-gray-100 pb-6">
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-emerald-50 text-xl text-emerald-600 shadow-2xs">
@@ -165,11 +146,9 @@ export default function NotificationsPage() {
               <p className="text-xs text-gray-400">Cập nhật các tin tức và đơn hàng mới nhất của bạn</p>
             </div>
           </div>
-
           <div className="mt-6 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-4 text-xs font-medium text-emerald-800">
             ℹ️ Thông báo cũ hơn 3 tháng sẽ được hệ thống tự động xóa.
           </div>
-
           {/* PUSH NOTIFICATION BANNER */}
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-emerald-200/70 bg-gradient-to-r from-emerald-50/60 to-teal-50/40 p-4">
             <div className="flex items-start gap-3">
@@ -194,7 +173,6 @@ export default function NotificationsPage() {
               {notifPermission === "granted" ? "Đã bật" : "Bật ngay"}
             </button>
           </div>
-
           {/* TABS FILTER */}
           <div className="mt-6 flex flex-wrap items-center gap-2 border-b border-gray-100 pb-4">
             {[
@@ -218,7 +196,6 @@ export default function NotificationsPage() {
               </button>
             ))}
           </div>
-
           {/* NOTIFICATION LIST */}
           <div className="mt-6 space-y-4">
             {loading ? (
@@ -233,34 +210,62 @@ export default function NotificationsPage() {
                 const formattedDate = item.created_at
                   ? new Date(item.created_at).toLocaleString("vi-VN")
                   : "";
+                const href =
+                  item.order_id
+                    ? `/orders?order=${encodeURIComponent(item.order_id)}`
+                    : cat === "withdraw"
+                    ? "/wallet"
+                    : null;
 
-                return (
+                const content = (
+                  <div className="flex items-start gap-3.5">
+                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
+                      {cat === "order" ? "📦" : cat === "cash" ? "💰" : cat === "withdraw" ? "💳" : "📢"}
+                    </div>
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-sm font-bold text-gray-900">
+                          {item.title}
+                        </h3>
+
+                        <span className="shrink-0 text-[11px] font-medium text-gray-400">
+                          {formattedDate}
+                        </span>
+                      </div>
+
+                      <p className="mt-1 text-xs leading-relaxed text-gray-600">
+                        {item.message || item.description}
+                      </p>
+
+                      {href && (
+                        <div className="mt-2 text-[11px] font-bold text-emerald-600">
+                          {item.order_id ? "Xem đơn hàng →" : "Xem ví tiền →"}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+
+                return href ? (
+                  <Link
+                    key={item.id}
+                    href={href}
+                    className="block rounded-2xl border border-gray-200/70 bg-[#fafafa] p-4.5 transition hover:border-emerald-200 hover:bg-white hover:shadow-xs"
+                  >
+                    {content}
+                  </Link>
+                ) : (
                   <div
                     key={item.id}
                     className="rounded-2xl border border-gray-200/70 bg-[#fafafa] p-4.5 transition hover:bg-white hover:shadow-xs"
                   >
-                    <div className="flex items-start gap-3.5">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-600">
-                        {cat === "order" ? "📦" : cat === "cash" ? "💰" : cat === "withdraw" ? "💳" : "📢"}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2">
-                          <h3 className="text-sm font-bold text-gray-900">{item.title}</h3>
-                          <span className="shrink-0 text-[11px] font-medium text-gray-400">
-                            {formattedDate}
-                          </span>
-                        </div>
-                        <p className="mt-1 text-xs leading-relaxed text-gray-600">
-                          {item.message || item.description}
-                        </p>
-                      </div>
-                    </div>
+                    {content}
                   </div>
                 );
               })
             )}
           </div>
-
           {/* MODAL */}
           {showModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
