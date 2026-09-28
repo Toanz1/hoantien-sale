@@ -374,7 +374,7 @@ export default function ShopeeCashbackPage() {
 
       <main className="min-h-screen bg-[#fffdfb] text-gray-900">
 
-      {/\* HEADER \*/}
+      {/* HEADER */}
 
       <header className="border-b border-gray-200 bg-white">
 
@@ -402,7 +402,7 @@ export default function ShopeeCashbackPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-7 sm:px-6">
 
-        {/\* NAVIGATION \*/}
+        {/* NAVIGATION */}
 
         <div className="flex flex-wrap gap-3">
 
@@ -436,7 +436,7 @@ export default function ShopeeCashbackPage() {
 
 
 
-        {/\* LINK FORM \*/}
+        {/* LINK FORM */}
 
         <div className="mt-6">
 
@@ -446,7 +446,7 @@ export default function ShopeeCashbackPage() {
 
 
 
-        {/\* HERO \*/}
+        {/* HERO */}
 
         <section className="py-10 text-center">
 
@@ -472,7 +472,7 @@ export default function ShopeeCashbackPage() {
 
 
 
-        {/\* HOW TO \*/}
+        {/* HOW TO */}
 
         <section className="pb-12">
 
@@ -588,7 +588,7 @@ export default function ShopeeCashbackPage() {
 
 
 
-        {/\* IMPORTANT CONDITIONS \*/}
+        {/* IMPORTANT CONDITIONS */}
 
         <section className="pb-12">
 
@@ -686,7 +686,7 @@ export default function ShopeeCashbackPage() {
 
 
 
-        {/\* FAQ \*/}
+        {/* FAQ */}
 
         <section className="pb-12">
 
@@ -794,7 +794,7 @@ export default function ShopeeCashbackPage() {
 
 
 
-        {/\* INTERNAL LINKS \*/}
+        {/* INTERNAL LINKS */}
 
         <section className="pb-8">
 
