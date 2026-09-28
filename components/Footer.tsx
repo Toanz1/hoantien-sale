@@ -25,7 +25,7 @@ export default function Footer() {
         </div>
 
         <p className="mt-2 text-center text-xs font-bold text-emerald-400">
-           Shopee, Lazada, TikTok Shop
+          Mua sắm hoàn tiền Shopee, Lazada, TikTok Shop
         </p>
 
         {/* MENU */}
@@ -66,7 +66,7 @@ export default function Footer() {
 
             <div className="mt-3 space-y-2 text-sm text-gray-200">
               <Link
-                href="/#how-it-works"
+                href="/huong-dan-hoan-tien"
                 className="block transition hover:text-emerald-400"
               >
                 Hướng dẫn hoàn tiền
@@ -116,7 +116,7 @@ export default function Footer() {
               </Link>
 
               <Link
-                href="/ bao-mat-tai-khoan"
+                href="/bao-mat-tai-khoan"
                 className="block transition hover:text-emerald-400"
               >
                 Bảo mật tài khoản
