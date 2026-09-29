@@ -43,11 +43,17 @@ export const metadata: Metadata = {
   creator: "Hoàn Tiền Sale",
   publisher: "Hoàn Tiền Sale",
 
-  icons: {
-    icon: "/platforms/hoantiensale.png",
-    shortcut: "/platforms/hoantiensale.png",
-    apple: "/platforms/hoantiensale.png",
-  },
+icons: {
+  icon: [
+    {
+      url: "/favicon.png",
+      type: "image/png",
+      sizes: "512x512",
+    },
+  ],
+  shortcut: "/favicon.png",
+  apple: "/favicon.png",
+},
 
   openGraph: {
     type: "website",
