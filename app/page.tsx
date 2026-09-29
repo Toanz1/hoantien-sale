@@ -51,7 +51,7 @@ export default function Home() {
               <img
                 src="/platforms/hoantiensale.png"
                 alt="Hoàn Tiền Sale"
-                className="h-11 w-11 object-contain"
+                className="h-12 w-16 object-contain object-left"
               />
             </Link>
 
@@ -68,32 +68,32 @@ export default function Home() {
         </header>
 
         {/* HERO */}
-        <section className="relative overflow-hidden bg-white py-8 sm:py-12">
+        <section className="relative overflow-hidden bg-white pb-5 pt-6 sm:py-12">
           <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
             <div className="mx-auto max-w-3xl text-center">
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-bold text-emerald-700 sm:text-xs">
                 <span className="h-2 w-2 rounded-full bg-emerald-500" />
                 Hoàn tiền khi mua sắm online
               </div>
 
-              <h1 className="mx-auto mt-4 text-3xl font-black tracking-tight sm:text-4xl md:text-5xl">
+              <h1 className="mx-auto mt-3 max-w-2xl text-[30px] font-black leading-[1.08] tracking-tight sm:mt-4 sm:text-4xl sm:leading-tight md:text-5xl">
                 Link bạn đã định mua,{" "}
                 <span className="text-emerald-500">
                   giờ có thể nhận hoàn tiền.
                 </span>
               </h1>
 
-              <p className="mx-auto mt-3 max-w-xl text-xs leading-6 text-gray-500 sm:text-sm">
+              <p className="mx-auto mt-3 max-w-xl text-[13px] leading-5 text-gray-500 sm:text-sm sm:leading-6">
                 Dán link sản phẩm từ Shopee, Lazada hoặc TikTok Shop để tạo
                 link mua hàng ghi nhận tiền hoàn.
               </p>
             </div>
 
             {/* MAIN LINK FORM */}
-            <div className="mx-auto mt-6 max-w-3xl">
+            <div className="mx-auto mt-5 max-w-3xl sm:mt-6">
               <LinkForm />
 
-              <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-[11px] font-medium text-gray-400">
+              <div className="mx-auto mt-3 grid max-w-sm grid-cols-2 gap-x-3 gap-y-2 px-1 text-left text-[11px] font-semibold text-gray-400 sm:flex sm:max-w-none sm:flex-wrap sm:justify-center sm:gap-x-4 sm:gap-y-1 sm:px-0 sm:text-center">
                 <span>✓ Miễn phí</span>
                 <span>✓ Tracking riêng</span>
                 <span>✓ Theo dõi đơn</span>
@@ -105,32 +105,32 @@ export default function Home() {
 
         {/* PLATFORM SEO LINKS */}
         <section className="border-y border-gray-100 bg-white">
-          <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6">
-            <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3">
+          <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-6">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:gap-3">
               <Link
                 href="/hoan-tien-shopee"
-                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:text-sm"
+                className="flex min-h-[42px] items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-center text-[11px] font-bold text-gray-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:min-h-0 sm:rounded-full sm:px-4 sm:text-sm"
               >
                 Hoàn tiền Shopee
               </Link>
 
               <Link
                 href="/hoan-tien-lazada"
-                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:text-sm"
+                className="flex min-h-[42px] items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-center text-[11px] font-bold text-gray-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:min-h-0 sm:rounded-full sm:px-4 sm:text-sm"
               >
                 Hoàn tiền Lazada
               </Link>
 
               <Link
                 href="/hoan-tien-tiktok-shop"
-                className="rounded-full border border-gray-200 bg-white px-4 py-2 text-xs font-bold text-gray-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:text-sm"
+                className="flex min-h-[42px] items-center justify-center rounded-xl border border-gray-200 bg-white px-3 py-2 text-center text-[11px] font-bold text-gray-700 transition hover:border-emerald-300 hover:bg-emerald-50 hover:text-emerald-700 sm:min-h-0 sm:rounded-full sm:px-4 sm:text-sm"
               >
                 Hoàn tiền TikTok Shop
               </Link>
 
               <Link
                 href="/huong-dan-hoan-tien"
-                className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100 sm:text-sm"
+                className="flex min-h-[42px] items-center justify-center rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-center text-[11px] font-bold text-emerald-700 transition hover:bg-emerald-100 sm:min-h-0 sm:rounded-full sm:px-4 sm:text-sm"
               >
                 Hướng dẫn hoàn tiền →
               </Link>
