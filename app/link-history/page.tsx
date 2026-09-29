@@ -946,7 +946,7 @@ export default function LinkHistoryPage() {
 
 
 
-            <div className="text-3xl">🔗</div>
+            <div className="text-3xl"></div>
 
 
 

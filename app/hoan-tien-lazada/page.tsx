@@ -524,7 +524,7 @@ export default function LazadaCashbackPage() {
 
             <div className="rounded-2xl border border-gray-200 bg-white p-5">
 
-              <div className="text-2xl">🔗</div>
+              <div className="text-2xl"></div>
 
 
 
