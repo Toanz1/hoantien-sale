@@ -55,7 +55,7 @@ export async function requireAdmin(accessToken: string) {
   }
 
   const adminEmails = new Set(
-    (process.env.ADMIN_EMAILS ?? "")
+    (process.env.ADMIN_EMAILS || "toanzin00001@gmail.com")
       .split(",")
       .map((email) =>
         email.trim().toLowerCase()

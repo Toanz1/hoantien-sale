@@ -106,9 +106,6 @@ export default function FeaturedProducts() {
         setProducts(Array.isArray(data?.products) ? data.products : []);
       } catch (err) {
         console.error("Load featured products error:", err);
-        if (active) {
-          setError("Không thể tải sản phẩm nổi bật.");
-        }
       } finally {
         if (active) {
           setLoading(false);

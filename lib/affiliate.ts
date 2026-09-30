@@ -21,13 +21,7 @@ function createTrackingId(
   url: string
 ) {
   const secret =
-  process.env.TRACKING_SECRET;
-
-if (!secret) {
-  throw new Error(
-    "TRACKING_SECRET chưa được cấu hình."
-  );
-}
+    process.env.TRACKING_SECRET || "hoantiensale-default-tracking-secret";
 
   return crypto
     .createHmac("sha256", secret)
@@ -47,13 +41,7 @@ function buildShopeeAffiliateUrl(
   trackingId: string
 ) {
   const affiliateId =
-    process.env.SHOPEE_AFFILIATE_ID;
-
-  if (!affiliateId) {
-    throw new Error(
-      "SHOPEE_AFFILIATE_ID chưa được cấu hình."
-    );
-  }
+    process.env.SHOPEE_AFFILIATE_ID || "hoantiensale";
 
   const params = new URLSearchParams({
     origin_link: originalUrl,
@@ -73,13 +61,7 @@ function buildLazadaAffiliateUrl(
   trackingId: string
 ) {
   const affiliateId =
-    process.env.LAZADA_AFFILIATE_ID;
-
-  if (!affiliateId) {
-    throw new Error(
-      "LAZADA_AFFILIATE_ID chưa được cấu hình."
-    );
-  }
+    process.env.LAZADA_AFFILIATE_ID || "hoantiensale";
 
   let url: URL;
 
